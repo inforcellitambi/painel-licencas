@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS-PREMIUM - Painel de Licenças</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    /* TELA DE LOGIN */
+    .login-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .login-box {
+      background: #1e293b;
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .login-box h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #00e676;
+    }
+    .login-box p {
+      color: #94a3b8;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 16px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    .login-box input:focus {
+      border-color: #00e676;
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+    }
+    .login-box button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #00e676 0%, #00cc33 100%);
+      color: #000000;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .login-box button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
+    }
+    
+    /* PAINEL PRINCIPAL (oculto até login) */
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px;
+      background: rgba(0, 230, 118, 0.1);
+      border-radius: 16px;
+      border: 1px solid #00e676;
+    }
+    .header h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; color: #00e676; }
+    .header p { color: #94a3b8; font-size: 16px; }
+    
+    .form-section {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      border: 1px solid #334155;
+    }
+    .form-section h2 { font-size: 20px; margin-bottom: 20px; color: #00e676; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      padding: 12px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 14px;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #00e676;
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+    }
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00e676 0%, #00cc33 100%);
+      color: #000000;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
+    }
+    .btn-logout {
+      background: #ef4444;
+      color: #ffffff;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    
+    .licencas-list {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+    }
+    .licencas-list h2 { font-size: 20px; margin-bottom: 20px; color: #00e676; }
+    
+    .licenca-card {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #334155;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+    }
+    .licenca-info h3 { font-size: 16px; margin-bottom: 8px; color: #ffffff; }
+    .licenca-info p { font-size: 13px; color: #94a3b8; margin-bottom: 4px; }
+    .licenca-chave {
+      background: rgba(0, 230, 118, 0.1);
+      border: 1px solid #00e676;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #00e676;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+    .licenca-actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn-small {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-copy { background: #00e676; color: #000000; }
+    .btn-delete { background: #ef4444; color: #ffffff; }
+    
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      animation: slideIn 0.3s ease-out;
+    }
+    .alert-success { background: rgba(0, 230, 118, 0.15); border: 1px solid #00e676; color: #00e676; }
+    .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+      .licenca-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- TELA DE LOGIN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <h1>🔑 OS-PREMIUM</h1>
+      <p>Painel Administrativo de Licenças</p>
+      <input type="password" id="senhaAdmin" placeholder="Digite a senha de administrador" onkeypress="if(event.key==='Enter')fazerLogin()">
+      <button onclick="fazerLogin()">🔓 Entrar</button>
+      <p id="erroLogin" style="color: #ef4444; margin-top: 16px; font-size: 13px;"></p>
+    </div>
+  </div>
+
+  <!-- PAINEL PRINCIPAL -->
+  <div class="painel" id="painelPrincipal">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div></div>
+        <button class="btn btn-logout" onclick="fazerLogout()">🚪 Sair</button>
+      </div>
+
+      <div class="header">
+        <h1>🔑 OS-PREMIUM - Painel de Licenças</h1>
+        <p>Gerencie clientes e gere chaves de ativação</p>
+      </div>
+
+      <div id="mensagem"></div>
+
+      <!-- FORMULÁRIO -->
+      <div class="form-section">
+        <h2>➕ Nova Licença</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome do Cliente *</label>
+            <input type="text" id="nomeCliente" placeholder="Ex: João Silva" required>
+          </div>
+          <div class="form-group">
+            <label>Nome da Empresa</label>
+            <input type="text" id="nomeEmpresa" placeholder="Ex: Tech Solutions">
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="email" placeholder="cliente@email.com">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="telefone" placeholder="(00) 00000-0000">
+          </div>
+          <div class="form-group">
+            <label>HWID do Cliente *</label>
+            <input type="text" id="hwid" placeholder="Cole o HWID aqui" required>
+          </div>
+          <div class="form-group">
+            <label>Data de Validade *</label>
+            <input type="date" id="validade" required>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="status">
+              <option value="Ativo">Ativo</option>
+              <option value="Inativo">Inativo</option>
+              <option value="Expirado">Expirado</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="gerarLicenca()">🔑 Gerar Chave de Ativação</button>
+      </div>
+
+      <!-- LISTA DE LICENÇAS -->
+      <div class="licencas-list">
+        <h2>📋 Licenças Geradas</h2>
+        <div id="listaLicencas"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
