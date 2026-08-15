@@ -1,21 +1,85 @@
-// ✅ SENHA DO ADMINISTRADOR (MUDE PARA SUA SENHA)
+// ✅ PAINEL DE LICENÇAS OS-PREMIUM - VERSÃO FINAL (SUPABASE)
 const SENHA_ADMIN = 'Washington2024'
-
-// ✅ Banco de dados local
-const DB_KEY = 'os_premium_licencas'
+const SUPABASE_URL = 'https://sneozlvodhxirzrimtep.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_3i3ZGV6M13dbUhEtvyfGFQ_DPiu4Pnl'
 const AUTH_KEY = 'os_premium_auth'
 
-// ✅ Verificar se já está logado
+// ============================
+// FUNÇÕES DO SUPABASE
+// ============================
+
+async function buscarLicencas() {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/licencas?select=*&order=criado_em.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    })
+    if (!response.ok) throw new Error('Falha ao buscar')
+    return await response.json()
+  } catch (e) {
+    console.error('Erro ao buscar licenças:', e)
+    return []
+  }
+}
+
+async function salvarLicenca(licenca) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/licencas`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(licenca)
+    })
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+async function atualizarLicenca(hwid, dados) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/licencas?hwid=eq.${encodeURIComponent(hwid)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    })
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+async function excluirLicenca(hwid) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/licencas?hwid=eq.${encodeURIComponent(hwid)}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    })
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+// ============================
+// LOGIN
+// ============================
+
 function verificarLogin() {
-  const autenticado = sessionStorage.getItem(AUTH_KEY)
-  if (autenticado === 'true') {
+  if (sessionStorage.getItem(AUTH_KEY) === 'true') {
     document.getElementById('loginScreen').style.display = 'none'
     document.getElementById('painelPrincipal').classList.add('ativo')
     renderizarLicencas()
   }
 }
 
-// ✅ Fazer login
 function fazerLogin() {
   const senha = document.getElementById('senhaAdmin').value
   if (senha === SENHA_ADMIN) {
@@ -26,42 +90,14 @@ function fazerLogin() {
     renderizarLicencas()
   } else {
     document.getElementById('erroLogin').textContent = '❌ Senha incorreta!'
-    document.getElementById('senhaAdmin').value = ''
   }
 }
 
-// ✅ Fazer logout
 function fazerLogout() {
   sessionStorage.removeItem(AUTH_KEY)
   location.reload()
 }
 
-// ✅ Carregar licenças
-function carregarLicencas() {
-  const dados = localStorage.getItem(DB_KEY)
-  return dados ? JSON.parse(dados) : []
-}
-
-// ✅ Salvar licenças
-function salvarLicencas(licencas) {
-  localStorage.setItem(DB_KEY, JSON.stringify(licencas))
-}
-
-// ✅ Gerador de Chave
-function gerarChave(hwid, validade) {
-  const base = `${hwid}-${validade}-OSPREMIUM-V2-${Date.now()}`
-  let hash = 0
-  for (let i = 0; i < base.length; i++) {
-    hash = ((hash << 5) - hash) + base.charCodeAt(i)
-    hash |= 0
-  }
-  const prefix = hwid.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4).toUpperCase()
-  const suffix = Math.abs(hash).toString(16).substring(0, 6).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `OS-${prefix}-${suffix}-${random}-${validade.replace(/-/g, '')}`
-}
-
-// ✅ Mostrar mensagem
 function mostrarMensagem(texto, tipo = 'success') {
   const div = document.getElementById('mensagem')
   div.className = `alert alert-${tipo === 'success' ? 'success' : 'error'}`
@@ -69,8 +105,11 @@ function mostrarMensagem(texto, tipo = 'success') {
   setTimeout(() => div.textContent = '', 5000)
 }
 
-// ✅ Gerar nova licença
-function gerarLicenca() {
+// ============================
+// CADASTRO MANUAL (ativa na hora)
+// ============================
+
+async function gerarLicenca() {
   const nomeCliente = document.getElementById('nomeCliente').value.trim()
   const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim()
   const email = document.getElementById('email').value.trim()
@@ -84,87 +123,189 @@ function gerarLicenca() {
     return
   }
 
-  const chaveGerada = gerarChave(hwid, validade)
-  
-  const novaLicenca = {
-    id: Date.now(),
-    nomeCliente,
-    nomeEmpresa,
+  const sucesso = await salvarLicenca({
+    hwid,
+    nome_cliente: nomeCliente,
+    nome_empresa: nomeEmpresa,
     email,
     telefone,
-    hwid,
     validade,
     status,
-    chave: chaveGerada,
-    dataGeracao: new Date().toISOString()
+    status_aprovacao: 'Ativo'
+  })
+
+  if (sucesso) {
+    mostrarMensagem('✅ Licença cadastrada na nuvem! O sistema ativa sozinho.')
+    document.getElementById('nomeCliente').value = ''
+    document.getElementById('nomeEmpresa').value = ''
+    document.getElementById('email').value = ''
+    document.getElementById('telefone').value = ''
+    document.getElementById('hwid').value = ''
+    document.getElementById('validade').value = ''
+    document.getElementById('status').value = 'Ativo'
+    await renderizarLicencas()
+  } else {
+    mostrarMensagem('❌ Erro ao salvar no Supabase', 'error')
   }
-
-  const licencas = carregarLicencas()
-  licencas.push(novaLicenca)
-  salvarLicencas(licencas)
-
-  mostrarMensagem('✅ Licença gerada e salva com sucesso!')
-  
-  // Limpar formulário
-  document.getElementById('nomeCliente').value = ''
-  document.getElementById('nomeEmpresa').value = ''
-  document.getElementById('email').value = ''
-  document.getElementById('telefone').value = ''
-  document.getElementById('hwid').value = ''
-  document.getElementById('validade').value = ''
-  document.getElementById('status').value = 'Ativo'
-
-  renderizarLicencas()
 }
 
-// ✅ Copiar chave
-function copiarChave(chave) {
-  navigator.clipboard.writeText(chave)
-  mostrarMensagem('✅ Chave copiada! Cole no WhatsApp/E-mail do cliente.')
+// ============================
+// RENOVAR / APROVAR / REPROVAR
+// ============================
+
+async function renovarLicenca(hwid) {
+  const padrao = new Date()
+  padrao.setDate(padrao.getDate() + 30)
+  const padraoStr = padrao.toISOString().split('T')[0]
+
+  const novaValidade = prompt('Nova validade (AAAA-MM-DD):', padraoStr)
+  if (!novaValidade) return
+
+  const sucesso = await atualizarLicenca(hwid, { validade: novaValidade, status: 'Ativo', status_aprovacao: 'Ativo' })
+  if (sucesso) {
+    mostrarMensagem('✅ Renovado! O cliente abre o sistema e ativa sozinho.')
+    await renderizarLicencas()
+  }
 }
 
-// ✅ Excluir licença
-function excluirLicenca(id) {
-  if (!confirm('⚠️ Tem certeza que deseja excluir esta licença?')) return
-  
-  let licencas = carregarLicencas()
-  licencas = licencas.filter(l => l.id !== id)
-  salvarLicencas(licencas)
-  mostrarMensagem('✅ Licença excluída!')
-  renderizarLicencas()
+async function aprovarCadastro(hwid) {
+  const padrao = new Date()
+  padrao.setDate(padrao.getDate() + 30)
+  const validade = prompt('Validade da licença (AAAA-MM-DD):', padrao.toISOString().split('T')[0])
+  if (!validade) return
+
+  const sucesso = await atualizarLicenca(hwid, { status_aprovacao: 'Ativo', status: 'Ativo', validade })
+  if (sucesso) {
+    mostrarMensagem('✅ Cliente aprovado! Ele abre o sistema e ativa sozinho.')
+    await renderizarLicencas()
+  }
 }
 
-// ✅ Renderizar lista
-function renderizarLicencas() {
-  const licencas = carregarLicencas()
+async function reprovarCadastro(hwid) {
+  if (!confirm('Reprovar este cadastro?')) return
+  const sucesso = await atualizarLicenca(hwid, { status_aprovacao: 'Reprovado' })
+  if (sucesso) {
+    mostrarMensagem('❌ Cadastro reprovado!')
+    await renderizarLicencas()
+  }
+}
+
+async function excluirLicencaHandler(hwid) {
+  if (!confirm('Excluir esta licença?')) return
+  const sucesso = await excluirLicenca(hwid)
+  if (sucesso) {
+    mostrarMensagem('✅ Licença excluída!')
+    await renderizarLicencas()
+  }
+}
+
+function copiarTexto(texto, msg) {
+  navigator.clipboard.writeText(texto)
+  mostrarMensagem(msg || '✅ Copiado!')
+}
+
+// ============================
+// LISTA
+// ============================
+
+async function renderizarLicencas() {
   const container = document.getElementById('listaLicencas')
+  container.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 20px;">⏳ Carregando...</p>'
+
+  const licencas = await buscarLicencas()
+  const hoje = new Date()
+
+  const pendentes = licencas.filter(l => l.status_aprovacao === 'Pendente')
+  const ativas = licencas.filter(l => l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado')
 
   if (licencas.length === 0) {
     container.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 40px;">Nenhuma licença cadastrada</p>'
     return
   }
 
-  container.innerHTML = licencas.map(licenca => `
-    <div class="licenca-card">
-      <div class="licenca-info">
-        <h3>${licenca.nomeCliente} ${licenca.nomeEmpresa ? `- ${licenca.nomeEmpresa}` : ''}</h3>
-        <p>📧 ${licenca.email || 'N/A'} | 📱 ${licenca.telefone || 'N/A'}</p>
-        <p> HWID: ${licenca.hwid}</p>
-        <p>📅 Validade: ${new Date(licenca.validade).toLocaleDateString('pt-BR')} | Status: <strong style="color: ${licenca.status === 'Ativo' ? '#00e676' : '#ef4444'}">${licenca.status}</strong></p>
-        <div class="licenca-chave">${licenca.chave}</div>
+  let html = ''
+
+  if (pendentes.length > 0) {
+    html += `<h3 style="color: #f59e0b; margin: 0 0 12px 0;">⏳ Aguardando Aprovação (${pendentes.length})</h3>`
+    html += pendentes.map(l => `
+      <div class="licenca-card" style="border-color: #f59e0b;">
+        <div class="licenca-info">
+          <h3>${l.nome_cliente}</h3>
+          <p>🔒 HWID: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;font-size:11px;">${l.hwid}</code></p>
+          <p>📅 Cadastrado: ${new Date(l.criado_em).toLocaleString('pt-BR')}</p>
+          <p style="color: #f59e0b; font-weight: 600;">⚠️ AGUARDANDO SUA APROVAÇÃO</p>
+        </div>
+        <div class="licenca-actions">
+          <button class="btn-small btn-approve" onclick="aprovarCadastro('${l.hwid}')">✅ Aprovar</button>
+          <button class="btn-small btn-reject" onclick="reprovarCadastro('${l.hwid}')">❌ Reprovar</button>
+          <button class="btn-small btn-delete" onclick="excluirLicencaHandler('${l.hwid}')">🗑️ Excluir</button>
+        </div>
       </div>
-      <div class="licenca-actions">
-        <button class="btn-small btn-copy" onclick="copiarChave('${licenca.chave}')"> Copiar Chave</button>
-        <button class="btn-small btn-delete" onclick="excluirLicenca(${licenca.id})">🗑️ Excluir</button>
-      </div>
-    </div>
-  `).join('')
+    `).join('')
+  }
+
+  if (ativas.length > 0) {
+    html += `<h3 style="color: #00e676; margin: 20px 0 12px 0;">✅ Licenças Ativas (${ativas.length})</h3>`
+    html += ativas.map(l => {
+      const validade = new Date(l.validade)
+      const dias = Math.ceil((validade - hoje) / (1000 * 60 * 60 * 24))
+      const expirado = dias <= 0
+      const vencendo = !expirado && dias <= 7
+      const cor = expirado ? '#ef4444' : vencendo ? '#f59e0b' : '#00e676'
+      const texto = expirado ? 'Expirado' : vencendo ? `Vence em ${dias}d` : `${dias} dias restantes`
+
+      return `
+        <div class="licenca-card">
+          <div class="licenca-info">
+            <h3>${l.nome_cliente} ${l.nome_empresa ? `- ${l.nome_empresa}` : ''}</h3>
+            <p>📧 ${l.email || 'N/A'} | 📱 ${l.telefone || 'N/A'}</p>
+            <p>🔒 HWID: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;font-size:11px;">${l.hwid}</code></p>
+            <p>📅 Validade: ${validade.toLocaleDateString('pt-BR')} | <strong style="color:${cor}">${texto}</strong></p>
+          </div>
+          <div class="licenca-actions">
+            <button class="btn-small btn-renew" onclick="renovarLicenca('${l.hwid}')">🔄 Renovar</button>
+            <button class="btn-small btn-copy" onclick="copiarTexto('${l.hwid}', '✅ HWID copiado!')">📋 Copiar HWID</button>
+            <button class="btn-small btn-delete" onclick="excluirLicencaHandler('${l.hwid}')">🗑️ Excluir</button>
+          </div>
+        </div>
+      `
+    }).join('')
+  }
+
+  container.innerHTML = html
 }
 
-// ✅ Inicializar
+// ============================
+// INICIALIZAÇÃO
+// ============================
+
 document.addEventListener('DOMContentLoaded', () => {
+  const estilo = document.createElement('style')
+  estilo.textContent = `
+    .btn-approve { background: #10b981; color: #fff; }
+    .btn-renew { background: #3b82f6; color: #fff; }
+    .btn-reject { background: #ef4444; color: #fff; }
+    .btn-copy { background: #00e676; color: #000; }
+    .btn-delete { background: #ef4444; color: #fff; }
+  `
+  document.head.appendChild(estilo)
+
   verificarLogin()
-  
   const hoje = new Date().toISOString().split('T')[0]
-  document.getElementById('validade').setAttribute('min', hoje)
+  const validadeInput = document.getElementById('validade')
+  if (validadeInput) validadeInput.setAttribute('min', hoje)
+
+  setInterval(() => {
+    if (sessionStorage.getItem(AUTH_KEY) === 'true') renderizarLicencas()
+  }, 30000)
 })
+
+window.fazerLogin = fazerLogin
+window.fazerLogout = fazerLogout
+window.gerarLicenca = gerarLicenca
+window.renovarLicenca = renovarLicenca
+window.aprovarCadastro = aprovarCadastro
+window.reprovarCadastro = reprovarCadastro
+window.excluirLicencaHandler = excluirLicencaHandler
+window.copiarTexto = copiarTexto
+window.mostrarMensagem = mostrarMensagem
