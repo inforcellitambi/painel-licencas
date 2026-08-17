@@ -6,10 +6,6 @@ const AUTH_KEY = 'os_premium_auth'
 
 let usuarioAtual = null
 
-// ============================
-// FUNÇÕES DO SUPABASE
-// ============================
-
 async function buscarLicencas() {
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/licencas?select=*&order=criado_em.desc`, {
@@ -115,10 +111,6 @@ async function excluirRevendedor(id) {
   } catch (e) { return false }
 }
 
-// ============================
-// LOGIN
-// ============================
-
 function verificarLogin() {
   const saved = sessionStorage.getItem(AUTH_KEY)
   if (saved) {
@@ -193,10 +185,6 @@ function mostrarMensagem(texto, tipo = 'success') {
   setTimeout(() => div.textContent = '', 5000)
 }
 
-// ============================
-// CADASTRO / RENOVAR / APROVAR
-// ============================
-
 async function gerarLicenca() {
   const nomeCliente = document.getElementById('nomeCliente').value.trim()
   const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim()
@@ -265,10 +253,6 @@ async function excluirLicencaHandler(hwid) {
   const sucesso = await excluirLicenca(hwid)
   if (sucesso) { mostrarMensagem('✅ Excluída!'); await renderizarLicencas() }
 }
-
-// ============================
-// REVENDEDORES
-// ============================
 
 async function cadastrarRevendedorHandler() {
   const nome = document.getElementById('revNome').value.trim()
@@ -371,18 +355,13 @@ async function renderizarEstatisticas() {
   `).join('') || '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma venda ainda</p>'
 }
 
-// ============================
-// LISTA DE LICENÇAS (separadas em pendentes e ativas)
-// ============================
-
 async function renderizarLicencas() {
   const containerPendentes = document.getElementById('listaLicencas')
   const containerAtivas = document.getElementById('listaLicencasAtivas')
-  
+
   let licencas = await buscarLicencas()
   const hoje = new Date()
 
-  // FILTRO: revendedor só vê as dele
   if (usuarioAtual?.tipo === 'revendedor') {
     licencas = licencas.filter(l => l.revendedor_id === usuarioAtual.id)
   }
@@ -390,7 +369,6 @@ async function renderizarLicencas() {
   const pendentes = licencas.filter(l => l.status_aprovacao === 'Pendente')
   const ativas = licencas.filter(l => l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado')
 
-  // RENDERIZAR PENDENTES
   if (containerPendentes) {
     if (pendentes.length === 0) {
       containerPendentes.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma pendente</p>'
@@ -413,7 +391,6 @@ async function renderizarLicencas() {
     }
   }
 
-  // RENDERIZAR ATIVAS
   if (containerAtivas) {
     if (ativas.length === 0) {
       containerAtivas.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma ativa</p>'
@@ -449,10 +426,6 @@ function copiarTexto(texto, msg) {
   navigator.clipboard.writeText(texto)
   mostrarMensagem(msg || '✅ Copiado!')
 }
-
-// ============================
-// INICIALIZAÇÃO
-// ============================
 
 document.addEventListener('DOMContentLoaded', () => {
   const estilo = document.createElement('style')
