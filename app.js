@@ -1,10 +1,17 @@
-// ✅ PAINEL OS-PREMIUM COM SISTEMA DE REVENDEDORES - VERSÃO FINAL
+// ✅ PAINEL OS-PREMIUM — CÓDIGO COMPLETO E FINAL
+// Admin + Revendedores + Aprovação com dados + Bloqueios + Filtros + Segurança
+
 const SENHA_ADMIN = 'Washington2024'
 const SUPABASE_URL = 'https://sneozlvodhxirzrimtep.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_3i3ZGV6M13dbUhEtvyfGFQ_DPiu4Pnl'
 const AUTH_KEY = 'os_premium_auth'
 
 let usuarioAtual = null
+let filtroRevendedor = 'todos'
+
+// ============================
+// FUNÇÕES DO SUPABASE
+// ============================
 
 async function buscarLicencas() {
   try {
@@ -111,6 +118,10 @@ async function excluirRevendedor(id) {
   } catch (e) { return false }
 }
 
+// ============================
+// LOGIN / SESSÃO / SEGURANÇA
+// ============================
+
 function verificarLogin() {
   const saved = sessionStorage.getItem(AUTH_KEY)
   if (saved) {
@@ -185,11 +196,19 @@ function mostrarMensagem(texto, tipo = 'success') {
   setTimeout(() => div.textContent = '', 5000)
 }
 
+// ============================
+// CLIENTES: CADASTRAR / RENOVAR / APROVAR / BLOQUEAR
+// ============================
+
 async function gerarLicenca() {
   const nomeCliente = document.getElementById('nomeCliente').value.trim()
   const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim()
-  const email = document.getElementById('email').value.trim()
+  const cnpj = document.getElementById('cnpj').value.trim()
+  const endereco = document.getElementById('endereco').value.trim()
+  const cidade = document.getElementById('cidade').value.trim()
   const telefone = document.getElementById('telefone').value.trim()
+  const email = document.getElementById('email').value.trim()
+  const responsavel = document.getElementById('responsavel').value.trim()
   const hwid = document.getElementById('hwid').value.trim()
   const validade = document.getElementById('validade').value
   const status = document.getElementById('status').value
@@ -201,17 +220,16 @@ async function gerarLicenca() {
 
   const sucesso = await salvarLicenca({
     hwid, nome_cliente: nomeCliente, nome_empresa: nomeEmpresa,
-    email, telefone, validade, status, status_aprovacao: 'Ativo'
+    cnpj, endereco, cidade, telefone, email, responsavel,
+    validade, status, status_aprovacao: 'Ativo'
   })
 
   if (sucesso) {
     mostrarMensagem('✅ Licença cadastrada!')
-    document.getElementById('nomeCliente').value = ''
-    document.getElementById('nomeEmpresa').value = ''
-    document.getElementById('email').value = ''
-    document.getElementById('telefone').value = ''
-    document.getElementById('hwid').value = ''
-    document.getElementById('validade').value = ''
+    ;['nomeCliente','nomeEmpresa','cnpj','endereco','cidade','telefone','email','responsavel','hwid','validade'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.value = ''
+    })
     document.getElementById('status').value = 'Ativo'
     await renderizarLicencas()
     if (usuarioAtual?.tipo === 'admin') await renderizarRevendedores()
@@ -226,11 +244,16 @@ async function renovarLicenca(hwid) {
   const novaValidade = prompt('Nova validade (AAAA-MM-DD):', padrao.toISOString().split('T')[0])
   if (!novaValidade) return
   const sucesso = await atualizarLicenca(hwid, { validade: novaValidade, status: 'Ativo', status_aprovacao: 'Ativo' })
-  if (sucesso) { mostrarMensagem('✅ Renovado!'); await renderizarLicencas(); if (usuarioAtual?.tipo === 'admin') await renderizarRevendedores() }
+  if (sucesso) {
+    mostrarMensagem('✅ Renovado!')
+    await renderizarLicencas()
+    if (usuarioAtual?.tipo === 'admin') await renderizarRevendedores()
+  }
 }
 
 async function aprovarCadastro(hwid) {
-  const padrao = new Date(); padrao.setDate(padrao.getDate() + 30)
+  const padrao = new Date()
+  padrao.setDate(padrao.getDate() + 30)
   const validade = prompt('Validade (AAAA-MM-DD):', padrao.toISOString().split('T')[0])
   if (!validade) return
   const dados = { status_aprovacao: 'Ativo', status: 'Ativo', validade }
@@ -239,7 +262,11 @@ async function aprovarCadastro(hwid) {
     dados.revendedor_nome = usuarioAtual.nome
   }
   const sucesso = await atualizarLicenca(hwid, dados)
-  if (sucesso) { mostrarMensagem('✅ Aprovado!'); await renderizarLicencas(); if (usuarioAtual?.tipo === 'admin') await renderizarRevendedores() }
+  if (sucesso) {
+    mostrarMensagem('✅ Aprovado!')
+    await renderizarLicencas()
+    if (usuarioAtual?.tipo === 'admin') await renderizarRevendedores()
+  }
 }
 
 async function reprovarCadastro(hwid) {
@@ -248,11 +275,56 @@ async function reprovarCadastro(hwid) {
   if (sucesso) { mostrarMensagem('❌ Reprovado!'); await renderizarLicencas() }
 }
 
+// ✅ BLOQUEAR / DESBLOQUEAR CLIENTE (admin e revendedor)
+async function bloquearCliente(hwid, statusAtual) {
+  const novo = statusAtual === 'Ativo' ? 'Inativo' : 'Ativo'
+  const acao = novo === 'Inativo' ? '🚫 BLOQUEAR' : '✅ DESBLOQUEAR'
+  if (!confirm(`${acao} este cliente?\n\nBloqueado = o sistema dele para de funcionar.`)) return
+  const sucesso = await atualizarLicenca(hwid, { status: novo })
+  if (sucesso) {
+    mostrarMensagem(novo === 'Inativo' ? '🚫 Cliente BLOQUEADO!' : '✅ Cliente desbloqueado!')
+    await renderizarLicencas()
+  } else {
+    mostrarMensagem('❌ Erro ao alterar o status', 'error')
+  }
+}
+
 async function excluirLicencaHandler(hwid) {
   if (!confirm('Excluir esta licença?')) return
   const sucesso = await excluirLicenca(hwid)
   if (sucesso) { mostrarMensagem('✅ Excluída!'); await renderizarLicencas() }
 }
+
+async function editarDadosPendente(hwid) {
+  const licencas = await buscarLicencas()
+  const lic = licencas.find(l => l.hwid === hwid)
+  if (!lic) return
+
+  const nomeEmpresa = prompt('Nome da empresa:', lic.nome_empresa || '')
+  if (nomeEmpresa === null) return
+  const cnpj = prompt('CNPJ:', lic.cnpj || '')
+  if (cnpj === null) return
+  const endereco = prompt('Endereço:', lic.endereco || '')
+  if (endereco === null) return
+  const cidade = prompt('Cidade/UF:', lic.cidade || '')
+  if (cidade === null) return
+  const telefone = prompt('Telefone:', lic.telefone || '')
+  if (telefone === null) return
+  const email = prompt('Email:', lic.email || '')
+  if (email === null) return
+  const responsavel = prompt('Responsável:', lic.responsavel || '')
+  if (responsavel === null) return
+
+  const sucesso = await atualizarLicenca(hwid, {
+    nome_empresa: nomeEmpresa,
+    cnpj, endereco, cidade, telefone, email, responsavel
+  })
+  if (sucesso) { mostrarMensagem('✅ Dados atualizados!'); await renderizarLicencas() }
+}
+
+// ============================
+// REVENDEDORES
+// ============================
 
 async function cadastrarRevendedorHandler() {
   const nome = document.getElementById('revNome').value.trim()
@@ -263,10 +335,10 @@ async function cadastrarRevendedorHandler() {
   const sucesso = await cadastrarRevendedor({ nome, email, telefone, senha, status: 'Ativo' })
   if (sucesso) {
     mostrarMensagem('✅ Revendedor cadastrado!')
-    document.getElementById('revNome').value = ''
-    document.getElementById('revEmail').value = ''
-    document.getElementById('revTelefone').value = ''
-    document.getElementById('revSenha').value = ''
+    ;['revNome','revEmail','revTelefone','revSenha'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.value = ''
+    })
     await renderizarRevendedores()
   }
 }
@@ -316,6 +388,36 @@ async function renderizarRevendedores() {
   }).join('')
 }
 
+// ============================
+// FILTRO POR REVENDEDOR (só admin)
+// ============================
+
+function mudarFiltroRevendedor(valor) {
+  filtroRevendedor = valor
+  renderizarLicencas()
+}
+
+async function montarFiltroRevendedores() {
+  if (usuarioAtual?.tipo !== 'admin') return ''
+  const revendedores = await buscarRevendedores()
+  const opcoes = revendedores.map(r =>
+    `<option value="${r.id}" ${String(filtroRevendedor) === String(r.id) ? 'selected' : ''}>${r.nome}</option>`
+  ).join('')
+  return `
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="color:#94a3b8;font-size:13px;font-weight:600">🏪 Ver clientes de:</label>
+      <select onchange="mudarFiltroRevendedor(this.value)" style="padding:8px 12px;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;font-size:13px">
+        <option value="todos" ${filtroRevendedor === 'todos' ? 'selected' : ''}>👑 TODOS (acesso total)</option>
+        ${opcoes}
+      </select>
+    </div>
+  `
+}
+
+// ============================
+// ABAS E ESTATÍSTICAS
+// ============================
+
 function trocarAba(aba) {
   document.querySelectorAll('.aba').forEach(el => el.classList.remove('ativa'))
   document.querySelectorAll('.aba-conteudo').forEach(el => el.style.display = 'none')
@@ -323,6 +425,7 @@ function trocarAba(aba) {
   document.getElementById(`conteudo-${aba}`).style.display = 'block'
   if (aba === 'revendedores') renderizarRevendedores()
   if (aba === 'estatisticas') renderizarEstatisticas()
+  if (aba === 'pendentes' || aba === 'ativas') renderizarLicencas()
 }
 
 async function renderizarEstatisticas() {
@@ -334,26 +437,31 @@ async function renderizarEstatisticas() {
   const stats = {}
   licencas.forEach(l => {
     const chave = l.revendedor_nome || 'Administrador (você)'
-    if (!stats[chave]) stats[chave] = { total: 0, ativas: 0, pendentes: 0, reprovadas: 0 }
+    if (!stats[chave]) stats[chave] = { total: 0, ativas: 0, pendentes: 0, reprovadas: 0, bloqueadas: 0 }
     stats[chave].total++
-    if (l.status_aprovacao === 'Ativo') stats[chave].ativas++
+    if (l.status_aprovacao === 'Ativo' && l.status === 'Ativo') stats[chave].ativas++
     if (l.status_aprovacao === 'Pendente') stats[chave].pendentes++
     if (l.status_aprovacao === 'Reprovado') stats[chave].reprovadas++
+    if (l.status === 'Inativo') stats[chave].bloqueadas++
   })
 
   revendedores.forEach(r => {
-    if (!stats[r.nome]) stats[r.nome] = { total: 0, ativas: 0, pendentes: 0, reprovadas: 0 }
+    if (!stats[r.nome]) stats[r.nome] = { total: 0, ativas: 0, pendentes: 0, reprovadas: 0, bloqueadas: 0 }
   })
 
   container.innerHTML = Object.entries(stats).map(([nome, s]) => `
     <div class="licenca-card">
       <div class="licenca-info">
         <h3>🏪 ${nome}</h3>
-        <p>📊 Total: <strong>${s.total}</strong> | ✅ Ativas: <strong style="color:#00e676">${s.ativas}</strong> | ⏳ Pendentes: <strong style="color:#f59e0b">${s.pendentes}</strong> | ❌ Reprovadas: <strong style="color:#ef4444">${s.reprovadas}</strong></p>
+        <p>📊 Total: <strong>${s.total}</strong> | ✅ Ativas: <strong style="color:#00e676">${s.ativas}</strong> | ⏳ Pendentes: <strong style="color:#f59e0b">${s.pendentes}</strong> | 🚫 Bloqueadas: <strong style="color:#ef4444">${s.bloqueadas}</strong> | ❌ Reprovadas: <strong style="color:#ef4444">${s.reprovadas}</strong></p>
       </div>
     </div>
   `).join('') || '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma venda ainda</p>'
 }
+
+// ============================
+// LISTA DE LICENÇAS (com TODOS os dados + bloqueio)
+// ============================
 
 async function renderizarLicencas() {
   const containerPendentes = document.getElementById('listaLicencas')
@@ -364,24 +472,36 @@ async function renderizarLicencas() {
 
   if (usuarioAtual?.tipo === 'revendedor') {
     licencas = licencas.filter(l => l.revendedor_id === usuarioAtual.id)
+  } else if (filtroRevendedor !== 'todos') {
+    licencas = licencas.filter(l => String(l.revendedor_id) === String(filtroRevendedor))
   }
+
+  const htmlFiltro = await montarFiltroRevendedores()
 
   const pendentes = licencas.filter(l => l.status_aprovacao === 'Pendente')
   const ativas = licencas.filter(l => l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado')
 
+  // ===== PENDENTES =====
   if (containerPendentes) {
     if (pendentes.length === 0) {
-      containerPendentes.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma pendente</p>'
+      containerPendentes.innerHTML = htmlFiltro + '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma pendente</p>'
     } else {
-      containerPendentes.innerHTML = pendentes.map(l => `
+      containerPendentes.innerHTML = htmlFiltro + pendentes.map(l => `
         <div class="licenca-card" style="border-color: #f59e0b;">
           <div class="licenca-info">
-            <h3>${l.nome_cliente}</h3>
+            <h3>${l.nome_cliente} ${l.nome_empresa ? `- ${l.nome_empresa}` : ''}</h3>
+            ${l.cnpj ? `<p>🏢 CNPJ: <strong>${l.cnpj}</strong></p>` : ''}
+            ${l.endereco ? `<p>📍 Endereço: ${l.endereco}</p>` : ''}
+            ${l.cidade ? `<p>🏙️ Cidade: ${l.cidade}</p>` : ''}
+            ${l.telefone ? `<p>📱 Telefone: ${l.telefone}</p>` : ''}
+            ${l.email ? `<p>📧 Email: ${l.email}</p>` : ''}
+            ${l.responsavel ? `<p>👤 Responsável: ${l.responsavel}</p>` : ''}
             <p>🔒 HWID: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;font-size:11px;">${l.hwid}</code></p>
             ${l.revendedor_nome ? `<p>🏪 Vendido por: <strong>${l.revendedor_nome}</strong></p>` : ''}
             <p>📅 Cadastrado: ${new Date(l.criado_em).toLocaleString('pt-BR')}</p>
           </div>
           <div class="licenca-actions">
+            <button class="btn-small btn-edit" onclick="editarDadosPendente('${l.hwid}')">✏️ Editar Dados</button>
             <button class="btn-small btn-approve" onclick="aprovarCadastro('${l.hwid}')">✅ Aprovar</button>
             <button class="btn-small btn-reject" onclick="reprovarCadastro('${l.hwid}')">❌ Reprovar</button>
             <button class="btn-small btn-delete" onclick="excluirLicencaHandler('${l.hwid}')">🗑️ Excluir</button>
@@ -391,28 +511,37 @@ async function renderizarLicencas() {
     }
   }
 
+  // ===== ATIVAS =====
   if (containerAtivas) {
     if (ativas.length === 0) {
-      containerAtivas.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma ativa</p>'
+      containerAtivas.innerHTML = htmlFiltro + '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhuma ativa</p>'
     } else {
-      containerAtivas.innerHTML = ativas.map(l => {
+      containerAtivas.innerHTML = htmlFiltro + ativas.map(l => {
         const validade = new Date(l.validade)
         const dias = Math.ceil((validade - hoje) / (1000 * 60 * 60 * 24))
         const expirado = dias <= 0
         const vencendo = !expirado && dias <= 7
-        const cor = expirado ? '#ef4444' : vencendo ? '#f59e0b' : '#00e676'
-        const texto = expirado ? 'Expirado' : vencendo ? `Vence em ${dias}d` : `${dias} dias restantes`
+        const bloqueado = l.status === 'Inativo'
+        const cor = bloqueado ? '#ef4444' : expirado ? '#ef4444' : vencendo ? '#f59e0b' : '#00e676'
+        const texto = bloqueado ? 'BLOQUEADO' : expirado ? 'Expirado' : vencendo ? `Vence em ${dias}d` : `${dias} dias restantes`
         return `
-          <div class="licenca-card">
+          <div class="licenca-card" style="border-color:${bloqueado ? '#ef4444' : ''}">
             <div class="licenca-info">
               <h3>${l.nome_cliente} ${l.nome_empresa ? `- ${l.nome_empresa}` : ''}</h3>
-              <p>📧 ${l.email || 'N/A'} | 📱 ${l.telefone || 'N/A'}</p>
+              ${l.cnpj ? `<p>🏢 CNPJ: <strong>${l.cnpj}</strong></p>` : ''}
+              ${l.endereco ? `<p>📍 Endereço: ${l.endereco}</p>` : ''}
+              ${l.cidade ? `<p>🏙️ Cidade: ${l.cidade}</p>` : ''}
+              ${l.telefone ? `<p>📱 Telefone: ${l.telefone}</p>` : ''}
+              ${l.email ? `<p>📧 Email: ${l.email}</p>` : ''}
+              ${l.responsavel ? `<p>👤 Responsável: ${l.responsavel}</p>` : ''}
               <p>🔒 HWID: <code style="background:#0f172a;padding:2px 6px;border-radius:4px;font-size:11px;">${l.hwid}</code></p>
               ${l.revendedor_nome ? `<p>🏪 Vendido por: <strong>${l.revendedor_nome}</strong></p>` : ''}
               <p>📅 Validade: ${validade.toLocaleDateString('pt-BR')} | <strong style="color:${cor}">${texto}</strong></p>
+              ${bloqueado ? '<p style="color:#ef4444;font-weight:800;margin-top:6px">🚫 CLIENTE BLOQUEADO</p>' : ''}
             </div>
             <div class="licenca-actions">
               <button class="btn-small btn-renew" onclick="renovarLicenca('${l.hwid}')">🔄 Renovar</button>
+              <button class="btn-small ${bloqueado ? 'btn-approve' : 'btn-reject'}" onclick="bloquearCliente('${l.hwid}', '${l.status}')">${bloqueado ? '✅ Desbloquear' : '🚫 Bloquear'}</button>
               <button class="btn-small btn-delete" onclick="excluirLicencaHandler('${l.hwid}')">🗑️ Excluir</button>
             </div>
           </div>
@@ -427,6 +556,10 @@ function copiarTexto(texto, msg) {
   mostrarMensagem(msg || '✅ Copiado!')
 }
 
+// ============================
+// INICIALIZAÇÃO + SEGURANÇA (verificação a cada 30s)
+// ============================
+
 document.addEventListener('DOMContentLoaded', () => {
   const estilo = document.createElement('style')
   estilo.textContent = `
@@ -434,6 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .btn-renew { background: #3b82f6; color: #fff; }
     .btn-reject { background: #ef4444; color: #fff; }
     .btn-delete { background: #ef4444; color: #fff; }
+    .btn-edit { background: #f59e0b; color: #000; }
   `
   document.head.appendChild(estilo)
 
@@ -442,24 +576,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const validadeInput = document.getElementById('validade')
   if (validadeInput) validadeInput.setAttribute('min', hoje)
 
-  setInterval(() => {
-    if (sessionStorage.getItem(AUTH_KEY)) {
-      renderizarLicencas()
-      if (usuarioAtual?.tipo === 'admin') renderizarRevendedores()
+  // ✅ ATUALIZAÇÃO + SEGURANÇA A CADA 30 SEGUNDOS
+  setInterval(async () => {
+    if (!sessionStorage.getItem(AUTH_KEY)) return
+
+    // Revendedor excluído ou bloqueado → logout automático
+    if (usuarioAtual?.tipo === 'revendedor' && usuarioAtual.id) {
+      try {
+        const revendedores = await buscarRevendedores()
+        const revAtual = revendedores.find(r => r.id === usuarioAtual.id)
+        if (!revAtual) {
+          alert('⚠️ Sua conta foi removida pelo administrador.\nVocê será desconectado.')
+          fazerLogout()
+          return
+        }
+        if (revAtual.status === 'Bloqueado') {
+          alert('🚫 Sua conta foi bloqueada pelo administrador.\nVocê será desconectado.')
+          fazerLogout()
+          return
+        }
+      } catch (e) {
+        console.warn('Falha ao verificar status do revendedor:', e)
+      }
     }
+
+    renderizarLicencas()
+    if (usuarioAtual?.tipo === 'admin') renderizarRevendedores()
   }, 30000)
 })
 
+// ============================
+// EXPORTAR FUNÇÕES PARA OS BOTÕES
+// ============================
 window.fazerLogin = fazerLogin
 window.fazerLogout = fazerLogout
 window.gerarLicenca = gerarLicenca
 window.renovarLicenca = renovarLicenca
 window.aprovarCadastro = aprovarCadastro
 window.reprovarCadastro = reprovarCadastro
+window.bloquearCliente = bloquearCliente
 window.excluirLicencaHandler = excluirLicencaHandler
+window.editarDadosPendente = editarDadosPendente
 window.copiarTexto = copiarTexto
 window.mostrarMensagem = mostrarMensagem
 window.cadastrarRevendedorHandler = cadastrarRevendedorHandler
 window.bloquearRevendedor = bloquearRevendedor
 window.excluirRevendedorHandler = excluirRevendedorHandler
 window.trocarAba = trocarAba
+window.mudarFiltroRevendedor = mudarFiltroRevendedor
