@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Câmera OS-PREMIUM</title>
+<style>
+ body{margin:0;background:#0A0F14;color:#E5E7EB;font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;box-sizing:border-box}
+ h1{font-size:20px;margin:0 0 8px}
+ p{color:#9CA3AF;font-size:13px;margin:0 0 24px;text-align:center}
+ label{display:block;background:linear-gradient(135deg,#00E676,#00C853);color:#000;font-weight:700;font-size:16px;padding:18px 40px;border-radius:12px;cursor:pointer;text-align:center}
+ input{display:none}
+ #status{margin-top:20px;font-size:14px;color:#00E676;min-height:20px;text-align:center}
+ #prev{margin-top:16px;max-width:220px;border-radius:10px;display:none;border:1px solid #1F2D3A}
+</style>
+</head>
+<body>
+<h1>📷 Câmera do Técnico</h1>
+<p>Aponte e tire a foto do aparelho.<br>Ela aparece na hora no sistema.</p>
+<label>📸 TIRAR FOTO<input type="file" accept="image/*" capture="environment" id="cam"></label>
+<img id="prev">
+<div id="status"></div>
+<script>
+const FB='https://os-premium-killswitch-default-rtdb.firebaseio.com';
+const s=new URLSearchParams(location.search).get('s');
+const st=document.getElementById('status');
+const prev=document.getElementById('prev');
+if(!s){st.textContent='❌ Sessão inválida. Gere o QR no sistema.';st.style.color='#EF4444';}
+document.getElementById('cam').addEventListener('change',e=>{
+ const f=e.target.files[0];if(!f||!s)return;
+ st.textContent='⏳ Enviando...';st.style.color='#FACC15';
+ const r=new FileReader();
+ r.onload=()=>{
+  const img=new Image();
+  img.onload=()=>{
+   const max=640;let w=img.width,h=img.height;
+   if(w>h){if(w>max){h=h*max/w;w=max}}else{if(h>max){w=w*max/h;h=max}}
+   const c=document.createElement('canvas');c.width=w;c.height=h;
+   c.getContext('2d').drawImage(img,0,0,w,h);
+   const b64=c.toDataURL('image/jpeg',0.5);
+   fetch(FB+'/fotos_remotas/'+encodeURIComponent(s)+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({img:b64,ts:Date.now()})})
+   .then(()=>{prev.src=b64;prev.style.display='block';st.textContent='✅ Foto enviada! Pode tirar outra.';st.style.color='#00E676';})
+   .catch(err=>{st.textContent='❌ Erro: '+err.message;st.style.color='#EF4444';});
+  };
+  img.src=r.result;
+ };
+ r.readAsDataURL(f);
+ e.target.value='';
+});
+</script>
+</body>
+</html>
