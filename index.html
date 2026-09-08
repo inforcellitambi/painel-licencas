@@ -7,36 +7,71 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0f172a; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 20px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .login-box, .painel-box { background: #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-    h1 { margin-bottom: 20px; color: #00e676; }
-    h2 { margin: 20px 0 12px 0; color: #fff; }
-    input, select, textarea { width: 100%; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
-    button { cursor: pointer; font-weight: 600; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .login-box { background: #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-width: 400px; margin: 100px auto; }
+    h1 { margin-bottom: 20px; color: #00e676; font-size: 24px; }
+    h2 { margin: 20px 0 12px 0; color: #fff; font-size: 18px; }
+    input, select { width: 100%; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+    input:focus, select:focus { outline: none; border-color: #00e676; }
+    button { cursor: pointer; font-weight: 600; transition: all 0.2s; }
     .btn { width: 100%; padding: 14px; background: #00e676; color: #000; border: none; border-radius: 8px; font-size: 15px; }
     .btn:hover { background: #00cc33; }
-    .btn-small { padding: 8px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
-    .alert { padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center; font-weight: 600; }
-    .alert-success { background: rgba(0,230,118,0.2); color: #00e676; }
-    .alert-error { background: rgba(239,68,68,0.2); color: #ef4444; }
-    .licenca-card { background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .btn-acao { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; font-weight: 700; color: #fff; }
+    .btn-editar { background: #3b82f6; }
+    .btn-editar:hover { background: #2563eb; }
+    .btn-renovar { background: #3b82f6; }
+    .btn-renovar:hover { background: #2563eb; }
+    .btn-bloquear { background: #ef4444; }
+    .btn-bloquear:hover { background: #dc2626; }
+    .btn-excluir { background: #64748b; }
+    .btn-excluir:hover { background: #475569; }
+    .btn-revenda { background: #10b981; }
+    .btn-aprovar { background: #00e676; color: #000; }
+    .btn-rejeitar { background: #ef4444; }
+    .btn-reaprovar { background: #f59e0b; color: #000; }
+    .licenca-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     .licenca-info p { margin: 4px 0; font-size: 13px; color: #cbd5e1; }
     .licenca-info h3 { color: #fff; font-size: 16px; margin-bottom: 8px; }
     .licenca-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-left: 8px; }
+    .badge-direto { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-revendedor { background: rgba(245,158,11,0.2); color: #fbbf24; }
     #painelPrincipal { display: none; }
     #painelPrincipal.ativo { display: block; }
     .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
     .logout-btn { background: #ef4444; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
     .abas { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .aba { padding: 10px 16px; background: #1e293b; color: #94a3b8; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .aba.ativa { background: #00e676; color: #000; }
+    .aba { padding: 10px 16px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .aba.ativa { background: #00e676; color: #000; border-color: #00e676; }
     .aba-conteudo { display: none; }
+    .loading { text-align: center; padding: 40px; color: #94a3b8; }
+    .codigo-rev { background: #0f172a; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #00e676; display: inline-block; }
+    #campoEmail { display: none; }
+    .stats-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-item { background: #0f172a; padding: 16px; border-radius: 8px; text-align: center; }
+    .stat-item h3 { font-size: 24px; margin-bottom: 8px; }
+    .stat-item p { color: #94a3b8; font-size: 13px; }
+
+    #modalEditar, #modalEditarRev { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
+    #modalEditar.ativo, #modalEditarRev.ativo { display: flex; }
+    .modal-content { background: #1e293b; border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; border: 2px solid #00e676; }
+    .modal-content h2 { margin-bottom: 20px; color: #00e676; }
+    .modal-content label { color: #cbd5e1; font-size: 13px; display: block; margin-bottom: 4px; margin-top: 12px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .modal-cancel { background: #64748b; color: #fff; }
+    .modal-save { background: #00e676; color: #000; }
+    
+    .senha-rev { font-family: monospace; background: #334155; padding: 2px 6px; border-radius: 4px; color: #fbbf24; }
+    .rev-card { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .rev-info { flex: 1; min-width: 200px; }
+    .rev-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
   <div class="container">
 
-    <!-- TELA DE LOGIN -->
     <div id="loginScreen" class="login-box">
       <h1>🔐 OS-PREMIUM - Painel</h1>
       <p style="margin-bottom:16px;color:#94a3b8;">Faça login como Administrador ou Revendedor</p>
@@ -47,7 +82,7 @@
         <option value="revendedor">🏪 Revendedor</option>
       </select>
 
-      <div id="campoEmail" style="display:none">
+      <div id="campoEmail">
         <label style="color:#cbd5e1;font-size:13px;">Email do revendedor:</label>
         <input id="emailLogin" type="email" placeholder="revendedor@email.com" />
       </div>
@@ -56,77 +91,689 @@
       <input id="senhaAdmin" type="password" placeholder="Sua senha" />
 
       <p id="erroLogin" style="color:#ef4444;margin:12px 0;min-height:18px;"></p>
-
       <button class="btn" onclick="fazerLogin()">🔓 Entrar</button>
     </div>
 
-    <!-- PAINEL PRINCIPAL -->
     <div id="painelPrincipal">
       <div class="header-row">
         <h1 id="tituloPainel">👑 Painel do Administrador</h1>
         <button class="logout-btn" onclick="fazerLogout()">🚪 Sair</button>
       </div>
 
-      <div id="mensagem"></div>
-
       <div class="abas">
-        <button class="aba ativa" id="aba-pendentes" onclick="trocarAba('pendentes')">⏳ Pendentes</button>
+        <button class="aba ativa" id="aba-todas" onclick="trocarAba('todas')">📋 Todas</button>
         <button class="aba" id="aba-ativas" onclick="trocarAba('ativas')">✅ Ativas</button>
+        <button class="aba" id="aba-pendentes" onclick="trocarAba('pendentes')">⏳ Pendentes</button>
+        <button class="aba" id="aba-bloqueadas" onclick="trocarAba('bloqueadas')">🚫 Bloqueadas</button>
+        <button class="aba" id="aba-reprovadas" onclick="trocarAba('reprovadas')">❌ Reprovadas</button>
         <button class="aba" id="aba-revendedores" onclick="trocarAba('revendedores')" style="display:none">🏪 Revendedores</button>
-        <button class="aba" id="aba-estatisticas" onclick="trocarAba('estatisticas')" style="display:none">📊 Estatísticas</button>
+        <button class="aba" id="aba-estatisticas" onclick="trocarAba('estatisticas')" style="display:none"> Estatísticas</button>
       </div>
 
-      <!-- ABA: PENDENTES -->
-      <div id="conteudo-pendentes" class="aba-conteudo" style="display:block">
-        <h2>⏳ Aguardando Aprovação</h2>
-        <div id="listaLicencas"></div>
+      <div id="conteudo-todas" class="aba-conteudo" style="display:block">
+        <h2>📋 Todas as Licenças</h2>
+        <div id="listaTodas"></div>
       </div>
 
-      <!-- ABA: ATIVAS -->
       <div id="conteudo-ativas" class="aba-conteudo">
         <h2>✅ Licenças Ativas</h2>
-        <div id="listaLicencasAtivas"></div>
-
-        <h2 style="margin-top:32px">➕ Cadastrar Nova Licença</h2>
-        <input id="nomeCliente" placeholder="Nome do cliente" />
-        <input id="nomeEmpresa" placeholder="Empresa (opcional)" />
-        <input id="email" placeholder="Email (opcional)" />
-        <input id="telefone" placeholder="Telefone (opcional)" />
-        <input id="hwid" placeholder="HWID do cliente" />
-        <input id="validade" type="date" />
-        <select id="status">
-          <option value="Ativo">Ativo</option>
-          <option value="Inativo">Inativo</option>
-        </select>
-        <button class="btn" onclick="gerarLicenca()">🔑 Cadastrar Licença</button>
+        <div id="listaAtivas"></div>
       </div>
 
-      <!-- ABA: REVENDEDORES (só admin) -->
+      <div id="conteudo-pendentes" class="aba-conteudo">
+        <h2>⏳ Aguardando Aprovação</h2>
+        <div id="listaPendentes"></div>
+      </div>
+
+      <div id="conteudo-bloqueadas" class="aba-conteudo">
+        <h2>🚫 Licenças Bloqueadas</h2>
+        <div id="listaBloqueadas"></div>
+      </div>
+
+      <div id="conteudo-reprovadas" class="aba-conteudo">
+        <h2>❌ Licenças Reprovadas</h2>
+        <div id="listaReprovadas"></div>
+      </div>
+
       <div id="conteudo-revendedores" class="aba-conteudo">
         <h2>➕ Cadastrar Novo Revendedor</h2>
-        <input id="revNome" placeholder="Nome completo" />
-        <input id="revEmail" type="email" placeholder="Email (será o login)" />
-        <input id="revTelefone" placeholder="Telefone (opcional)" />
-        <input id="revSenha" type="password" placeholder="Senha do revendedor" />
-        <button class="btn" onclick="cadastrarRevendedorHandler()">➕ Cadastrar Revendedor</button>
-
-        <h2 style="margin-top:32px">🏪 Revendedores Cadastrados</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <input id="revNome" placeholder="Nome completo *" />
+          <input id="revEmail" type="email" placeholder="Email (será o login) *" />
+          <input id="revTelefone" placeholder="Telefone (opcional)" />
+          <input id="revSenha" type="password" placeholder="Senha do revendedor *" />
+        </div>
+        <button class="btn" onclick="cadastrarRevendedorHandler()" style="margin-top: 12px;">➕ Cadastrar Revendedor</button>
+        <h2 style="margin-top:32px; border-top: 1px solid #334155; padding-top: 20px;"> Revendedores Cadastrados</h2>
         <div id="listaRevendedores"></div>
       </div>
 
-      <!-- ABA: ESTATÍSTICAS (só admin) -->
       <div id="conteudo-estatisticas" class="aba-conteudo">
-        <h2>📊 Vendas por Revendedor</h2>
+        <h2>📊 Estatísticas</h2>
         <div id="listaEstatisticas"></div>
       </div>
     </div>
   </div>
 
+  <!-- MODAL EDITAR LICENÇA -->
+  <div id="modalEditar">
+    <div class="modal-content">
+      <h2>✏️ Editar Licença</h2>
+      <input type="hidden" id="editId" />
+      <label>Nome do Cliente:</label>
+      <input id="editNome" type="text" />
+      <label>Nome da Empresa:</label>
+      <input id="editEmpresa" type="text" />
+      <label>Email:</label>
+      <input id="editEmail" type="email" />
+      <label>Telefone:</label>
+      <input id="editTelefone" type="text" />
+      <label>CNPJ:</label>
+      <input id="editCnpj" type="text" />
+      <label>Endereço:</label>
+      <input id="editEndereco" type="text" />
+      <label>Cidade:</label>
+      <input id="editCidade" type="text" />
+      <label>Responsável:</label>
+      <input id="editResponsavel" type="text" />
+      <label>Validade (YYYY-MM-DD):</label>
+      <input id="editValidade" type="date" />
+      <label>Senha:</label>
+      <input id="editSenha" type="text" />
+      <label>Status:</label>
+      <select id="editStatus">
+        <option value="Ativo">Ativo</option>
+        <option value="Inativo">Inativo (Bloqueado)</option>
+      </select>
+      <label>Revendedor:</label>
+      <select id="editRevendedor">
+        <option value="DIRETO">👤 Cliente Direto (sem revendedor)</option>
+      </select>
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="fecharModal()">❌ Cancelar</button>
+        <button class="modal-save" onclick="salvarEdicao()"> Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR REVENDEDOR -->
+  <div id="modalEditarRev">
+    <div class="modal-content">
+      <h2>✏️ Editar Revendedor</h2>
+      <input type="hidden" id="editRevId" />
+      <label>Nome:</label>
+      <input id="editRevNome" type="text" />
+      <label>Email:</label>
+      <input id="editRevEmail" type="email" />
+      <label>Telefone:</label>
+      <input id="editRevTelefone" type="text" />
+      <label>Senha:</label>
+      <input id="editRevSenha" type="text" />
+      <label>Status:</label>
+      <select id="editRevStatus">
+        <option value="Ativo">Ativo</option>
+        <option value="Bloqueado">Bloqueado</option>
+      </select>
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="fecharModalRev()">❌ Cancelar</button>
+        <button class="modal-save" onclick="salvarEdicaoRev()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    document.getElementById('tipoLogin').addEventListener('change', (e) => {
-      document.getElementById('campoEmail').style.display = e.target.value === 'revendedor' ? 'block' : 'none'
-    })
+    const SUPABASE_URL = 'https://sneozlvodhxirzrimtep.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_3i3ZGV6M13dbUhEtvyfGFQ_DPiu4Pnl';
+    const SENHA_ADMIN = '082612';
+    const AUTH_KEY = 'os_premium_auth';
+
+    let licencasCache = [];
+    let revendedoresCache = [];
+    let usuarioLogado = null;
+
+    async function supabaseQuery(endpoint, method = 'GET', body = null) {
+      try {
+        const options = {
+          method: method,
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+          }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const response = await fetch(SUPABASE_URL + '/rest/v1/' + endpoint, options);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        if (method === 'GET') return await response.json();
+        return true;
+      } catch (error) {
+        console.error('Erro Supabase:', error);
+        return null;
+      }
+    }
+
+    function fazerLogin() {
+      const tipo = document.getElementById('tipoLogin').value;
+      const senha = document.getElementById('senhaAdmin').value;
+      const email = document.getElementById('emailLogin').value;
+
+      if (tipo === 'admin') {
+        if (senha === SENHA_ADMIN) {
+          usuarioLogado = { tipo: 'admin', nome: 'Administrador' };
+          sessionStorage.setItem(AUTH_KEY, JSON.stringify(usuarioLogado));
+          entrarNoPainel();
+        } else {
+          document.getElementById('erroLogin').textContent = ' Senha incorreta!';
+        }
+      } else {
+        supabaseQuery('revendedores?email=eq.' + email + '&status=eq.Ativo').then(revs => {
+          if (revs && revs.length > 0 && revs[0].senha === senha) {
+            const r = revs[0];
+            usuarioLogado = { tipo: 'revendedor', nome: r.nome, email: r.email, codigo: r.codigo };
+            sessionStorage.setItem(AUTH_KEY, JSON.stringify(usuarioLogado));
+            entrarNoPainel();
+          } else {
+            document.getElementById('erroLogin').textContent = '❌ Credenciais inválidas ou revendedor bloqueado!';
+          }
+        });
+      }
+    }
+
+    async function entrarNoPainel() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('painelPrincipal').classList.add('ativo');
+      document.getElementById('tituloPainel').textContent = usuarioLogado.tipo === 'admin' ? '👑 Painel do Administrador' : '🏪 Painel de ' + usuarioLogado.nome;
+
+      if (usuarioLogado.tipo === 'admin') {
+        document.getElementById('aba-revendedores').style.display = 'inline-block';
+        document.getElementById('aba-estatisticas').style.display = 'inline-block';
+      }
+
+      document.querySelectorAll('.aba-conteudo div[id^="lista"]').forEach(el => {
+        el.innerHTML = '<div class="loading">⏳ Carregando...</div>';
+      });
+
+      licencasCache = await supabaseQuery('licencas?select=*') || [];
+      revendedoresCache = await supabaseQuery('revendedores?select=*') || [];
+      renderizarTudo();
+    }
+
+    function fazerLogout() {
+      sessionStorage.removeItem(AUTH_KEY);
+      location.reload();
+    }
+
+    function renderizarTudo() {
+      let licencasFiltradas = licencasCache;
+      
+      if (usuarioLogado.tipo === 'revendedor') {
+        licencasFiltradas = licencasCache.filter(l => l.codigo_revendedor === usuarioLogado.codigo);
+      }
+
+      renderizarTodas(licencasFiltradas);
+      renderizarAtivas(licencasFiltradas.filter(l => l.status === 'Ativo'));
+      renderizarPendentes(licencasFiltradas.filter(l => l.status_aprovacao === 'Pendente'));
+      renderizarBloqueadas(licencasFiltradas.filter(l => l.status === 'Inativo' && l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado'));
+      renderizarReprovadas(licencasFiltradas.filter(l => l.status_aprovacao === 'Reprovado'));
+
+      if (usuarioLogado.tipo === 'admin') {
+        renderizarRevendedores(revendedoresCache);
+        renderizarEstatisticas(licencasCache, revendedoresCache);
+      }
+    }
+
+    function renderizarTodas(licencas) {
+      const container = document.getElementById('listaTodas');
+      if (licencas.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Nenhuma licença encontrada</p>';
+        return;
+      }
+      container.innerHTML = licencas.map(l => criarCardLicenca(l, true)).join('');
+      adicionarEventListeners();
+    }
+
+    function renderizarAtivas(licencas) {
+      const container = document.getElementById('listaAtivas');
+      if (licencas.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Nenhuma licença ativa</p>';
+        return;
+      }
+      container.innerHTML = licencas.map(l => criarCardLicenca(l, false)).join('');
+      adicionarEventListeners();
+    }
+
+    function renderizarPendentes(licencas) {
+      const container = document.getElementById('listaPendentes');
+      if (licencas.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Nenhuma licença pendente</p>';
+        return;
+      }
+      container.innerHTML = licencas.map(l => criarCardLicenca(l, false)).join('');
+      adicionarEventListeners();
+    }
+
+    function renderizarBloqueadas(licencas) {
+      const container = document.getElementById('listaBloqueadas');
+      if (licencas.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Nenhuma licença bloqueada</p>';
+        return;
+      }
+      container.innerHTML = licencas.map(l => criarCardLicenca(l, false)).join('');
+      adicionarEventListeners();
+    }
+
+    function renderizarReprovadas(licencas) {
+      const container = document.getElementById('listaReprovadas');
+      if (licencas.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Nenhuma licença reprovada</p>';
+        return;
+      }
+      container.innerHTML = licencas.map(l => criarCardLicenca(l, false)).join('');
+      adicionarEventListeners();
+    }
+
+    function criarCardLicenca(l, mostrarStatus) {
+      const revInfo = l.codigo_revendedor && l.codigo_revendedor !== 'DIRETO'
+        ? '<span class="badge badge-revendedor">🏪 Rev: ' + (l.nome_revendedor || l.codigo_revendedor) + '</span>'
+        : '<span class="badge badge-direto">👤 Direto</span>';
+      
+      const diasRestantes = Math.ceil((new Date(l.validade) - new Date()) / (1000 * 60 * 60 * 24));
+      const diasText = diasRestantes > 0 ? diasRestantes + ' dias' : 'Venceu';
+      const diasColor = diasRestantes > 0 ? '#00e676' : '#ef4444';
+      
+      let statusColor = '#00e676';
+      let statusText = 'Ativa';
+      let borderLeft = '#00e676';
+      
+      if (l.status_aprovacao === 'Pendente') {
+        statusColor = '#f59e0b';
+        statusText = 'Pendente';
+        borderLeft = '#f59e0b';
+      } else if (l.status === 'Inativo' && l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado') {
+        statusColor = '#ef4444';
+        statusText = 'Bloqueada';
+        borderLeft = '#ef4444';
+      } else if (l.status_aprovacao === 'Reprovado') {
+        statusColor = '#ef4444';
+        statusText = 'Reprovada';
+        borderLeft = '#ef4444';
+      }
+
+      const botoes = gerarBotoes(l);
+
+      const infoAdmin = usuarioLogado.tipo === 'admin' 
+        ? '<p>🔑 HWID: ' + (l.hwid || 'N/A') + '</p>'
+        : '';
+      const infoSenha = usuarioLogado.tipo === 'admin'
+        ? '<p>🔒 Senha: <span style="font-family:monospace;background:#334155;padding:2px 6px;border-radius:4px">' + (l.senha || 'Não definida') + '</span></p>'
+        : '';
+
+      return '<div class="licenca-card" style="border-left: 4px solid ' + borderLeft + '"><div class="licenca-info"><h3>' + (l.nome_cliente || 'Sem nome') + ' ' + (l.nome_empresa ? '- ' + l.nome_empresa : '') + ' ' + revInfo + (mostrarStatus ? '<span style="color:' + statusColor + ';font-size:12px;margin-left:8px">[' + statusText + ']</span>' : '') + '</h3><p>📧 ' + (l.email || 'N/A') + ' | 📱 ' + (l.telefone || 'N/A') + '</p><p>🏢 CNPJ: ' + (l.cnpj || 'N/A') + ' | 📍 ' + (l.cidade || '') + '</p>' + infoAdmin + '<p>📅 Validade: ' + (l.validade ? new Date(l.validade).toLocaleDateString('pt-BR') : 'N/A') + ' | <span style="color:' + diasColor + ';font-weight:700">' + diasText + '</span></p>' + infoSenha + '</div><div class="licenca-actions">' + botoes + '</div></div>';
+    }
+
+    function gerarBotoes(l) {
+      let botoes = '';
+      
+      if (usuarioLogado.tipo === 'revendedor') {
+        if (l.status === 'Ativo') {
+          botoes += '<button class="btn-acao btn-renovar" data-action="renovar" data-id="' + l.id + '">🔄 Renovar</button>';
+        }
+        return botoes;
+      }
+      
+      if (l.status === 'Ativo') {
+        botoes += '<button class="btn-acao btn-editar" data-action="editar" data-id="' + l.id + '">✏️ Editar</button>';
+        botoes += '<button class="btn-acao btn-renovar" data-action="renovar" data-id="' + l.id + '">🔄 Renovar</button>';
+        botoes += '<button class="btn-acao btn-bloquear" data-action="bloquear" data-id="' + l.id + '">🚫 Bloquear</button>';
+        botoes += '<button class="btn-acao btn-excluir" data-action="excluir" data-id="' + l.id + '">🗑️ Excluir</button>';
+        botoes += '<button class="btn-acao btn-revenda" data-action="trocarrevenda" data-id="' + l.id + '">🏪 Trocar Revenda</button>';
+      } else if (l.status_aprovacao === 'Pendente') {
+        botoes += '<button class="btn-acao btn-aprovar" data-action="aprovar" data-id="' + l.id + '">✅ Aprovar</button>';
+        botoes += '<button class="btn-acao btn-rejeitar" data-action="rejeitar" data-id="' + l.id + '">❌ Rejeitar</button>';
+        botoes += '<button class="btn-acao btn-excluir" data-action="excluir" data-id="' + l.id + '">🗑️ Excluir</button>';
+      } else if (l.status === 'Inativo') {
+        botoes += '<button class="btn-acao btn-editar" data-action="editar" data-id="' + l.id + '">✏️ Editar</button>';
+        botoes += '<button class="btn-acao btn-bloquear" data-action="bloquear" data-id="' + l.id + '">✅ Desbloquear</button>';
+        botoes += '<button class="btn-acao btn-excluir" data-action="excluir" data-id="' + l.id + '">🗑️ Excluir</button>';
+      } else if (l.status_aprovacao === 'Reprovado') {
+        botoes += '<button class="btn-acao btn-reaprovar" data-action="reaprovar" data-id="' + l.id + '">🔄 Enviar para Pendentes</button>';
+        botoes += '<button class="btn-acao btn-excluir" data-action="excluir" data-id="' + l.id + '">🗑️ Excluir</button>';
+      }
+      
+      return botoes;
+    }
+
+    function adicionarEventListeners() {
+      document.querySelectorAll('[data-action="renovar"]').forEach(btn => {
+        btn.onclick = function() { renovarLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="bloquear"]').forEach(btn => {
+        btn.onclick = function() { bloquearLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="excluir"]').forEach(btn => {
+        btn.onclick = function() { excluirLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="trocarrevenda"]').forEach(btn => {
+        btn.onclick = function() { abrirModalEditar(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="aprovar"]').forEach(btn => {
+        btn.onclick = function() { aprovarLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="rejeitar"]').forEach(btn => {
+        btn.onclick = function() { rejeitarLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="reaprovar"]').forEach(btn => {
+        btn.onclick = function() { reaprovarLicenca(this.getAttribute('data-id')); };
+      });
+      document.querySelectorAll('[data-action="editar"]').forEach(btn => {
+        btn.onclick = function() { abrirModalEditar(this.getAttribute('data-id')); };
+      });
+    }
+
+    function abrirModalEditar(id) {
+      const l = licencasCache.find(x => String(x.id) === String(id));
+      if (!l) { alert('Licença não encontrada! ID: ' + id); return; }
+      
+      document.getElementById('editId').value = l.id;
+      document.getElementById('editNome').value = l.nome_cliente || '';
+      document.getElementById('editEmpresa').value = l.nome_empresa || '';
+      document.getElementById('editEmail').value = l.email || '';
+      document.getElementById('editTelefone').value = l.telefone || '';
+      document.getElementById('editCnpj').value = l.cnpj || '';
+      document.getElementById('editEndereco').value = l.endereco || '';
+      document.getElementById('editCidade').value = l.cidade || '';
+      document.getElementById('editResponsavel').value = l.responsavel || '';
+      document.getElementById('editValidade').value = l.validade || '';
+      document.getElementById('editSenha').value = l.senha || '';
+      document.getElementById('editStatus').value = l.status || 'Ativo';
+      
+      const selectRev = document.getElementById('editRevendedor');
+      selectRev.innerHTML = '<option value="DIRETO">👤 Cliente Direto (sem revendedor)</option>';
+      revendedoresCache.forEach(r => {
+        const option = document.createElement('option');
+        option.value = r.codigo;
+        option.textContent = '🏪 ' + r.nome + ' (' + r.codigo + ')';
+        option.dataset.nomeRevendedor = r.nome;
+        if (l.codigo_revendedor === r.codigo) option.selected = true;
+        selectRev.appendChild(option);
+      });
+      
+      document.getElementById('modalEditar').classList.add('ativo');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalEditar').classList.remove('ativo');
+    }
+
+    async function salvarEdicao() {
+      const id = document.getElementById('editId').value;
+      const selectRev = document.getElementById('editRevendedor');
+      const codigoRev = selectRev.value;
+      const nomeRev = selectRev.options[selectRev.selectedIndex].dataset.nomeRevendedor || 'Cliente Direto';
+      
+      const dados = {
+        nome_cliente: document.getElementById('editNome').value,
+        nome_empresa: document.getElementById('editEmpresa').value,
+        email: document.getElementById('editEmail').value,
+        telefone: document.getElementById('editTelefone').value,
+        cnpj: document.getElementById('editCnpj').value,
+        endereco: document.getElementById('editEndereco').value,
+        cidade: document.getElementById('editCidade').value,
+        responsavel: document.getElementById('editResponsavel').value,
+        validade: document.getElementById('editValidade').value,
+        senha: document.getElementById('editSenha').value,
+        status: document.getElementById('editStatus').value,
+        codigo_revendedor: codigoRev,
+        nome_revendedor: nomeRev
+      };
+      
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', dados);
+      if (ok) {
+        alert('✅ Licença atualizada com sucesso!');
+        fecharModal();
+        await recarregarDados();
+      } else {
+        alert('❌ Erro ao salvar.');
+      }
+    }
+
+    async function renovarLicenca(id) {
+      const l = licencasCache.find(x => String(x.id) === String(id));
+      if (!l) return;
+      const novaValidade = prompt(' Nova validade (YYYY-MM-DD):', l.validade || '');
+      if (!novaValidade) return;
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', { validade: novaValidade, status: 'Ativo' });
+      if (ok) {
+        alert('✅ Licença renovada até ' + novaValidade + '!');
+        await recarregarDados();
+      }
+    }
+
+    async function excluirLicenca(id) {
+      if (!confirm('⚠️ EXCLUIR esta licença permanentemente?')) return;
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'DELETE');
+      if (ok) {
+        alert('🗑️ Licença excluída!');
+        await recarregarDados();
+      }
+    }
+
+    async function bloquearLicenca(id) {
+      const l = licencasCache.find(x => String(x.id) === String(id));
+      if (!l) return;
+      const acao = l.status === 'Ativo' ? 'bloquear' : 'desbloquear';
+      if (!confirm('⚠️ ' + (acao === 'bloquear' ? 'Bloquear' : 'Desbloquear') + ' esta licença?')) return;
+      const novoStatus = l.status === 'Ativo' ? 'Inativo' : 'Ativo';
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', { status: novoStatus });
+      if (ok) {
+        alert((novoStatus === 'Ativo' ? '✅ Desbloqueada!' : '🚫 Bloqueada!'));
+        await recarregarDados();
+      }
+    }
+
+    async function aprovarLicenca(id) {
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', { status_aprovacao: 'Aprovado', status: 'Ativo', aprovado_por: usuarioLogado.nome, data_aprovacao: new Date().toISOString() });
+      if (ok) {
+        alert('✅ Licença aprovada!');
+        await recarregarDados();
+      }
+    }
+
+    async function rejeitarLicenca(id) {
+      if (!confirm('⚠️ Rejeitar?')) return;
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', { status_aprovacao: 'Reprovado', status: 'Inativo' });
+      if (ok) { alert('❌ Reprovada!'); await recarregarDados(); }
+    }
+
+    async function reaprovarLicenca(id) {
+      if (!confirm('🔄 Enviar para Pendentes?')) return;
+      const ok = await supabaseQuery('licencas?id=eq.' + id, 'PATCH', { status_aprovacao: 'Pendente', status: 'Inativo' });
+      if (ok) { alert('✅ Movida para Pendentes!'); await recarregarDados(); trocarAba('pendentes'); }
+    }
+
+    // ========== REVENDEDORES ==========
+    function renderizarRevendedores(revendedores) {
+      const container = document.getElementById('listaRevendedores');
+      if (revendedores.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Nenhum revendedor</p>';
+        return;
+      }
+      container.innerHTML = revendedores.map(r => {
+        const qtd = licencasCache.filter(l => l.codigo_revendedor === r.codigo && l.status === 'Ativo').length;
+        const statusColor = r.status === 'Ativo' ? '#00e676' : '#ef4444';
+        const statusText = r.status === 'Ativo' ? 'Ativo' : 'Bloqueado';
+        
+        // Admin vê a senha, revendedor não
+        const senhaHtml = usuarioLogado.tipo === 'admin'
+          ? '<p>🔒 Senha: <span class="senha-rev">' + (r.senha || 'Não definida') + '</span></p>'
+          : '';
+        
+        // Botões só para admin
+        const botoesAdmin = usuarioLogado.tipo === 'admin' ? `
+          <div class="rev-actions">
+            <button class="btn-acao btn-editar" onclick="abrirModalEditarRev('${r.id}')">✏️ Editar</button>
+            <button class="btn-acao btn-bloquear" onclick="toggleStatusRev('${r.id}')">${r.status === 'Ativo' ? '🚫 Bloquear' : '✅ Desbloquear'}</button>
+            <button class="btn-acao btn-excluir" onclick="excluirRevendedor('${r.id}')">🗑️ Excluir</button>
+          </div>
+        ` : '';
+        
+        return '<div class="licenca-card rev-card" style="border-left: 4px solid ' + statusColor + '"><div class="rev-info"><h3>' + r.nome + ' <span style="color:' + statusColor + ';font-size:12px">[' + statusText + ']</span></h3><p>📧 ' + r.email + ' | 📱 ' + (r.telefone || 'N/A') + '</p><p>🔑 Código: <span class="codigo-rev">' + r.codigo + '</span></p><p>👥 Clientes ativos: <strong style="color:#00e676">' + qtd + '</strong></p>' + senhaHtml + '</div>' + botoesAdmin + '</div>';
+      }).join('');
+    }
+
+    function abrirModalEditarRev(id) {
+      const r = revendedoresCache.find(x => String(x.id) === String(id));
+      if (!r) { alert('Revendedor não encontrado!'); return; }
+      
+      document.getElementById('editRevId').value = r.id;
+      document.getElementById('editRevNome').value = r.nome || '';
+      document.getElementById('editRevEmail').value = r.email || '';
+      document.getElementById('editRevTelefone').value = r.telefone || '';
+      document.getElementById('editRevSenha').value = r.senha || '';
+      document.getElementById('editRevStatus').value = r.status || 'Ativo';
+      
+      document.getElementById('modalEditarRev').classList.add('ativo');
+    }
+
+    function fecharModalRev() {
+      document.getElementById('modalEditarRev').classList.remove('ativo');
+    }
+
+    async function salvarEdicaoRev() {
+      const id = document.getElementById('editRevId').value;
+      const dados = {
+        nome: document.getElementById('editRevNome').value,
+        email: document.getElementById('editRevEmail').value,
+        telefone: document.getElementById('editRevTelefone').value,
+        senha: document.getElementById('editRevSenha').value,
+        status: document.getElementById('editRevStatus').value
+      };
+      
+      const ok = await supabaseQuery('revendedores?id=eq.' + id, 'PATCH', dados);
+      if (ok) {
+        alert('✅ Revendedor atualizado!');
+        fecharModalRev();
+        await recarregarDados();
+      } else {
+        alert('❌ Erro ao salvar.');
+      }
+    }
+
+    async function toggleStatusRev(id) {
+      const r = revendedoresCache.find(x => String(x.id) === String(id));
+      if (!r) return;
+      const novoStatus = r.status === 'Ativo' ? 'Bloqueado' : 'Ativo';
+      const acao = novoStatus === 'Ativo' ? 'desbloquear' : 'bloquear';
+      if (!confirm('⚠️ ' + (acao === 'bloquear' ? 'Bloquear' : 'Desbloquear') + ' revendedor ' + r.nome + '?')) return;
+      
+      const ok = await supabaseQuery('revendedores?id=eq.' + id, 'PATCH', { status: novoStatus });
+      if (ok) {
+        alert((novoStatus === 'Ativo' ? '✅ Desbloqueado!' : '🚫 Bloqueado!'));
+        await recarregarDados();
+      }
+    }
+
+    async function excluirRevendedor(id) {
+      const r = revendedoresCache.find(x => String(x.id) === String(id));
+      if (!r) return;
+      const qtdClientes = licencasCache.filter(l => l.codigo_revendedor === r.codigo).length;
+      if (!confirm('⚠️ EXCLUIR revendedor ' + r.nome + '?\n\nEle possui ' + qtdClientes + ' cliente(s).\n\nEsta ação não pode ser desfeita!')) return;
+      
+      const ok = await supabaseQuery('revendedores?id=eq.' + id, 'DELETE');
+      if (ok) {
+        alert('🗑️ Revendedor excluído!');
+        await recarregarDados();
+      } else {
+        alert('❌ Erro ao excluir.');
+      }
+    }
+
+    function renderizarEstatisticas(licencas, revendedores) {
+      const container = document.getElementById('listaEstatisticas');
+      const ativas = licencas.filter(l => l.status === 'Ativo').length;
+      const pendentes = licencas.filter(l => l.status_aprovacao === 'Pendente').length;
+      const bloqueadas = licencas.filter(l => l.status === 'Inativo' && l.status_aprovacao !== 'Pendente' && l.status_aprovacao !== 'Reprovado').length;
+      const reprovadas = licencas.filter(l => l.status_aprovacao === 'Reprovado').length;
+
+      let html = '<div class="stats-grid">';
+      html += '<div class="stat-item"><h3 style="color:#00e676">' + ativas + '</h3><p>✅ Ativas</p></div>';
+      html += '<div class="stat-item"><h3 style="color:#f59e0b">' + pendentes + '</h3><p>⏳ Pendentes</p></div>';
+      html += '<div class="stat-item"><h3 style="color:#ef4444">' + bloqueadas + '</h3><p>🚫 Bloqueadas</p></div>';
+      html += '<div class="stat-item"><h3 style="color:#ef4444">' + reprovadas + '</h3><p>❌ Reprovadas</p></div>';
+      html += '</div>';
+
+      html += '<h2 style="margin-top:20px">Por Revendedor</h2>';
+      revendedores.forEach(rev => {
+        const revLicencas = licencas.filter(l => l.codigo_revendedor === rev.codigo);
+        const revAtivas = revLicencas.filter(l => l.status === 'Ativo').length;
+        const revTotal = revLicencas.length;
+
+        html += '<div class="stats-box"><h3>🏪 ' + rev.nome + ' <span style="color:' + (rev.status === 'Ativo' ? '#00e676' : '#ef4444') + '">[' + rev.status + ']</span></h3>';
+        html += '<p><strong>Total:</strong> ' + revTotal + ' | <span style="color:#00e676">✅ Ativas: ' + revAtivas + '</span></p></div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function recarregarDados() {
+      licencasCache = await supabaseQuery('licencas?select=*') || [];
+      revendedoresCache = await supabaseQuery('revendedores?select=*') || [];
+      renderizarTudo();
+    }
+
+    function gerarCodigoIndicacao(nome) {
+      const base = nome.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return base.substring(0, 8) + random;
+    }
+
+    async function cadastrarRevendedorHandler() {
+      const nome = document.getElementById('revNome').value;
+      const email = document.getElementById('revEmail').value;
+      const telefone = document.getElementById('revTelefone').value;
+      const senha = document.getElementById('revSenha').value;
+
+      if (!nome || !email || !senha) {
+        alert('⚠️ Preencha nome, email e senha!');
+        return;
+      }
+
+      const codigo = gerarCodigoIndicacao(nome);
+      const novoRev = { nome: nome, email: email, telefone: telefone, senha: senha, status: 'Ativo', codigo: codigo };
+
+      const ok = await supabaseQuery('revendedores', 'POST', novoRev);
+
+      if (ok) {
+        alert('✅ Revendedor cadastrado!\n\nCódigo de Indicação: ' + codigo);
+        document.getElementById('revNome').value = '';
+        document.getElementById('revEmail').value = '';
+        document.getElementById('revTelefone').value = '';
+        document.getElementById('revSenha').value = '';
+        await recarregarDados();
+      } else {
+        alert('❌ Erro ao cadastrar revendedor.');
+      }
+    }
+
+    function trocarAba(aba) {
+      document.querySelectorAll('.aba-conteudo').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.aba').forEach(el => el.classList.remove('ativa'));
+      document.getElementById('conteudo-' + aba).style.display = 'block';
+      document.getElementById('aba-' + aba).classList.add('ativa');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const auth = sessionStorage.getItem(AUTH_KEY);
+      if (auth) {
+        usuarioLogado = JSON.parse(auth);
+        entrarNoPainel();
+      }
+
+      document.getElementById('tipoLogin').addEventListener('change', (e) => {
+        document.getElementById('campoEmail').style.display = e.target.value === 'revendedor' ? 'block' : 'none';
+      });
+    });
   </script>
-  <script src="app.js"></script>
 </body>
 </html>
