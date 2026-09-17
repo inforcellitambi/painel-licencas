@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acompanhar OS — OS-PREMIUM</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    background: radial-gradient(ellipse at top, #0F2420 0%, #0A0F14 60%, #070A0D 100%);
+    color: #E5E7EB; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .card { width: 100%; max-width: 460px; background: #111E28; border: 1px solid #1F2D3A; border-radius: 18px; padding: 26px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .brand .logo { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg,#00E676,#00C853); display:flex; align-items:center; justify-content:center; color:#000; font-weight:900; }
+  .brand b { font-size: 16px; } .brand b span { color:#00E676; }
+  .osnum { font-family: monospace; font-size: 26px; font-weight: 800; color: #00E676; }
+  .row { margin: 12px 0; } .row .lbl { font-size: 11px; color:#9CA3AF; text-transform: uppercase; letter-spacing:.5px; } .row .val { font-size: 15px; font-weight:600; margin-top:2px; }
+  .status { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; font-weight:800; font-size:13px; }
+  .timeline { margin-top: 18px; border-left: 2px solid #1F2D3A; padding-left: 18px; display:flex; flex-direction:column; gap:14px; }
+  .step { position: relative; } .step::before { content:''; position:absolute; left:-25px; top:4px; width:12px; height:12px; border-radius:50%; background:#1F2D3A; }
+  .step.on::before { background:#00E676; box-shadow:0 0 10px rgba(0,230,118,.6); }
+  .step .s { font-size:14px; font-weight:700; } .step .d { font-size:11px; color:#9CA3AF; }
+  .foot { margin-top:20px; font-size:11px; color:#6B7280; text-align:center; }
+  .err { text-align:center; color:#9CA3AF; padding:40px 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand"><div class="logo">🔧</div><b>OS-<span>PREMIUM</span></b></div>
+    <div id="content"><p class="err">Carregando...</p></div>
+  </div>
+
+<script>
+  const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
+  const token = new URLSearchParams(location.search).get('t');
+  const el = document.getElementById('content');
+
+  const cores = {
+    'Em Reparo': ['#FACC15','rgba(250,204,21,.15)'], 'Aguardando Peça': ['#3B82F6','rgba(59,130,246,.15)'],
+    'Pronto': ['#00E676','rgba(0,230,118,.15)'], 'Entregue': ['#9CA3AF','rgba(156,163,175,.15)'],
+    'Aguardando Técnico': ['#F59E0B','rgba(245,158,11,.15)'], 'Em Execução': ['#3B82F6','rgba(59,130,246,.15)'],
+    'Laudo Criado': ['#A855F7','rgba(168,85,247,.15)'], 'Finalizado': ['#00E676','rgba(0,230,118,.15)'],
+    'Pronto p/ Fechamento': ['#00E676','rgba(0,230,118,.15)'],
+  };
+
+  async function carregar() {
+    if (!token) { el.innerHTML = '<p class="err">Link inválido.</p>'; return; }
+    try {
+      const r = await fetch(`${FB}/os_public/${encodeURIComponent(token)}.json`);
+      const os = await r.json();
+      if (!os) { el.innerHTML = '<p class="err">OS não encontrada.</p>'; return; }
+      const [cor, bg] = cores[os.status] || ['#9CA3AF','rgba(156,163,175,.15)'];
+      const hist = (os.historico || []).map((h, i, arr) =>
+        `<div class="step ${i === arr.length-1 ? 'on' : ''}"><div class="s">${h.status}</div><div class="d">${h.data}</div></div>`
+      ).join('');
+      el.innerHTML = `
+        <div class="osnum">OS #${os.numero}</div>
+        <div class="row"><div class="lbl">Status atual</div><div><span class="status" style="color:${cor};background:${bg}">● ${os.status}</span></div></div>
+        <div class="row"><div class="lbl">Equipamento</div><div class="val">${os.equipamento || '—'}</div></div>
+        ${os.defeito ? `<div class="row"><div class="lbl">Defeito relatado</div><div class="val">${os.defeito}</div></div>` : ''}
+        ${os.valor ? `<div class="row"><div class="lbl">Valor estimado</div><div class="val" style="color:#00E676">R$ ${parseFloat(os.valor).toFixed(2).replace('.',',')}</div></div>` : ''}
+        <div class="row"><div class="lbl">Linha do tempo</div></div>
+        <div class="timeline">${hist}</div>
+        <div class="foot">Atualizado em ${os.atualizadoEm || '—'} • OS-PREMIUM</div>
+      `;
+    } catch (e) {
+      el.innerHTML = '<p class="err">Erro ao carregar. Tente novamente.</p>';
+    }
+  }
+  carregar();
+  setInterval(carregar, 15000);
+</script>
+</body>
+</html>
