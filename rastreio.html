@@ -6,48 +6,182 @@
 <title>Acompanhar OS — OS-PREMIUM</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: 'Inter','Segoe UI',Arial,sans-serif;
+    font-family: 'Inter','Segoe UI',-apple-system,BlinkMacSystemFont,Arial,sans-serif;
     background: radial-gradient(ellipse at top,#0F2420 0%,#0A0F14 60%,#070A0D 100%);
     color:#E5E7EB; min-height:100vh; padding:16px;
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width:560px; margin:0 auto; }
-  .card { background:#111E28; border:1px solid #1F2D3A; border-radius:16px; padding:20px; margin-bottom:14px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+  .wrap { max-width:580px; margin:0 auto; }
+  .card {
+    background: linear-gradient(145deg,#111E28 0%,#0E1A24 100%);
+    border: 1px solid #1F2D3A;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.03);
+    animation: fadeUp .4s ease both;
+  }
+  .card:nth-child(2){animation-delay:.05s} .card:nth-child(3){animation-delay:.1s}
+  .card:nth-child(4){animation-delay:.15s} .card:nth-child(5){animation-delay:.2s}
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
   .brand { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-  .brand .logo { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#00E676,#00C853); display:flex; align-items:center; justify-content:center; color:#000; font-weight:900; font-size:18px; }
-  .brand b { font-size:15px; } .brand b span { color:#00E676; }
-  .osnum { font-family:monospace; font-size:24px; font-weight:800; color:#00E676; }
-  .status { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; font-weight:800; font-size:13px; margin-top:8px; }
-  .sec { font-size:11px; color:#9CA3AF; text-transform:uppercase; letter-spacing:.6px; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:6px; }
-  .row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px dashed #1F2D3A; font-size:14px; }
+  .brand .logo {
+    width:40px; height:40px; border-radius:11px;
+    background: linear-gradient(135deg,#00E676 0%,#00C853 100%);
+    display:flex; align-items:center; justify-content:center;
+    color:#000; font-weight:900; font-size:18px;
+    box-shadow: 0 4px 14px rgba(0,230,118,.35);
+  }
+  .brand b { font-size:15px; letter-spacing:.3px; } .brand b span { color:#00E676; }
+  .brand .sub { font-size:11px; color:#6B7280; margin-left:auto; }
+
+  .osnum { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size:28px; font-weight:800; color:#00E676; letter-spacing:.5px; }
+  .status { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; font-weight:800; font-size:13px; margin-top:10px; }
+  .status::before { content:''; width:8px; height:8px; border-radius:50%; background: currentColor; box-shadow: 0 0 0 4px currentColor; opacity:.25; }
+
+  .sec { font-size:11px; color:#9CA3AF; text-transform:uppercase; letter-spacing:.8px; font-weight:700; margin:0 0 10px 0; display:flex; align-items:center; gap:8px; }
+  .sec::after { content:''; flex:1; height:1px; background: linear-gradient(to right, #1F2D3A 0%, transparent 100%); }
+
+  .row { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px dashed rgba(31,45,58,.8); font-size:14px; }
   .row:last-child { border-bottom:none; }
-  .row .k { color:#9CA3AF; } .row .v { font-weight:600; text-align:right; }
-  .txt { font-size:14px; line-height:1.6; color:#E5E7EB; white-space:pre-wrap; }
+  .row .k { color:#9CA3AF; } .row .v { font-weight:600; text-align:right; color:#E5E7EB; }
+  .txt { font-size:14px; line-height:1.65; color:#E5E7EB; white-space:pre-wrap; }
+
   .grid-fotos { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .grid-fotos img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid #1F2D3A; cursor:pointer; }
-  .chk { display:flex; justify-content:space-between; font-size:13px; padding:5px 8px; border-radius:6px; margin-bottom:4px; }
-  .chk.ok { background:rgba(0,230,118,.08); } .chk.no { background:rgba(239,68,68,.08); }
-  .timeline { border-left:2px solid #1F2D3A; padding-left:16px; display:flex; flex-direction:column; gap:12px; }
-  .step { position:relative; } .step::before { content:''; position:absolute; left:-23px; top:4px; width:11px; height:11px; border-radius:50%; background:#1F2D3A; }
-  .step.on::before { background:#00E676; box-shadow:0 0 10px rgba(0,230,118,.6); }
-  .step .s { font-size:14px; font-weight:700; } .step .d { font-size:11px; color:#9CA3AF; }
-  .foot { text-align:center; font-size:11px; color:#6B7280; padding:8px 0 20px 0; }
+  .grid-fotos img {
+    width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px;
+    border:1px solid #1F2D3A; cursor:pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .grid-fotos img:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,.5); }
+
+  .chk { display:flex; justify-content:space-between; font-size:13px; padding:6px 10px; border-radius:8px; margin-bottom:4px; }
+  .chk.ok { background:rgba(0,230,118,.08); color:#00E676; }
+  .chk.no { background:rgba(239,68,68,.06); color:#E5E7EB; }
+
+  .timeline { border-left:2px solid #1F2D3A; padding-left:18px; display:flex; flex-direction:column; gap:14px; }
+  .step { position:relative; }
+  .step::before { content:''; position:absolute; left:-25px; top:5px; width:12px; height:12px; border-radius:50%; background:#1F2D3A; border: 2px solid #0E1A24; }
+  .step.on::before { background:#00E676; box-shadow:0 0 0 4px rgba(0,230,118,.18), 0 0 12px rgba(0,230,118,.6); }
+  .step.cash::before { background:#F59E0B; box-shadow:0 0 0 4px rgba(245,158,11,.18), 0 0 12px rgba(245,158,11,.6); }
+  .step .s { font-size:14px; font-weight:700; }
+  .step .d { font-size:11px; color:#9CA3AF; margin-top:2px; }
+  .step.cash .s { color:#F59E0B; }
+
+  /* 💰 CARD DE CASHBACK */
+  .cb-card {
+    background: linear-gradient(135deg, #1a1408 0%, #18120a 60%, #15100a 100%);
+    border: 1px solid rgba(245,158,11,.4);
+    border-radius: 18px;
+    padding: 22px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(245,158,11,.08), inset 0 1px 0 rgba(245,158,11,.15);
+    animation: fadeUp .5s ease both;
+  }
+  .cb-card::before {
+    content:''; position:absolute; top:-40%; right:-20%;
+    width:200px; height:200px; border-radius:50%;
+    background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .cb-card::after {
+    content:''; position:absolute; bottom:-30%; left:-15%;
+    width:180px; height:180px; border-radius:50%;
+    background: radial-gradient(circle, rgba(251,191,36,.1) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .cb-head { display:flex; align-items:center; gap:10px; margin-bottom:16px; position:relative; z-index:1; }
+  .cb-icon {
+    width:42px; height:42px; border-radius:11px;
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; box-shadow: 0 4px 14px rgba(245,158,11,.35);
+  }
+  .cb-head h3 { font-size:15px; font-weight:800; color:#F59E0B; letter-spacing:.3px; }
+  .cb-head .tag { margin-left:auto; padding:3px 9px; border-radius:999px; background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.4); color:#F59E0B; font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+
+  .cb-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px; position:relative; z-index:1; }
+  .cb-box {
+    background: rgba(245,158,11,.06);
+    border: 1px solid rgba(245,158,11,.25);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .cb-box .lab { font-size:10px; color:#D97706; text-transform:uppercase; letter-spacing:.8px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+  .cb-box .val { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size:22px; font-weight:800; color:#FCD34D; line-height:1; }
+  .cb-box .val.saldo { font-size:24px; color:#F59E0B; }
+  .cb-box .sub { font-size:11px; color:#9CA3AF; margin-top:4px; }
+  .cb-box.pulse { animation: pulseGold 2.5s ease-in-out infinite; }
+  @keyframes pulseGold {
+    0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,.35); }
+    50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+  }
+
+  .cb-msg {
+    background: rgba(0,0,0,.25);
+    border: 1px dashed rgba(245,158,11,.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #FCD34D;
+    line-height: 1.5;
+    position: relative; z-index:1;
+  }
+  .cb-msg b { color:#F59E0B; }
+  .cb-regras { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; position:relative; z-index:1; }
+  .cb-regras .chip {
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(245,158,11,.08);
+    border: 1px solid rgba(245,158,11,.25);
+    color: #FCD34D; font-size: 10px; font-weight: 600;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+
+  .foot { text-align:center; font-size:11px; color:#6B7280; padding:12px 0 24px 0; }
+  .foot b { color:#00E676; }
   .err { text-align:center; color:#9CA3AF; padding:40px 0; font-size:15px; }
   .exp { text-align:center; padding:30px 10px; }
-  .exp .big { font-size:44px; margin-bottom:10px; }
-  #lightbox { position:fixed; inset:0; background:rgba(0,0,0,.95); display:none; align-items:center; justify-content:center; z-index:99; }
-  #lightbox img { max-width:94vw; max-height:94vh; border-radius:10px; }
+  .exp .big { font-size:52px; margin-bottom:12px; }
+
+  #lightbox { position:fixed; inset:0; background:rgba(0,0,0,.97); display:none; align-items:center; justify-content:center; z-index:99; padding:16px; }
+  #lightbox img { max-width:94vw; max-height:94vh; border-radius:12px; box-shadow: 0 20px 60px rgba(0,0,0,.8); }
+  #lightbox .close { position:fixed; top:16px; right:20px; color:#fff; font-size:32px; cursor:pointer; background:rgba(0,0,0,.5); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+  @media (max-width: 480px) {
+    .osnum { font-size:24px; }
+    .cb-box .val { font-size:20px; }
+    .cb-box .val.saldo { font-size:22px; }
+    .grid-fotos { grid-template-columns: repeat(2,1fr); }
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div class="brand"><div class="logo">🔧</div><b>OS-<span>PREMIUM</span></b></div>
-      <div id="content"><p class="err">Carregando...</p></div>
+    <div class="card" style="animation-delay:0s">
+      <div class="brand">
+        <div class="logo">🔧</div>
+        <div>
+          <b>OS-<span>PREMIUM</span></b>
+          <div style="font-size:10px; color:#6B7280; margin-top:1px; letter-spacing:.3px;">ACOMPANHAMENTO EM TEMPO REAL</div>
+        </div>
+      </div>
+      <div id="content"><p class="err">Carregando informações...</p></div>
     </div>
-    <div class="foot">OS-PREMIUM • Acompanhamento em tempo real</div>
+    <div class="foot">
+      <b>OS-PREMIUM</b> • Sistema profissional de assistência técnica<br>
+      <span style="font-size:10px; color:#4B5563;">Seus dados são protegidos e este link é exclusivo para esta OS.</span>
+    </div>
   </div>
-  <div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" src="" alt="" /></div>
+
+  <div id="lightbox" onclick="this.style.display='none'">
+    <div class="close" onclick="event.stopPropagation(); document.getElementById('lightbox').style.display='none'">×</div>
+    <img id="lightboxImg" src="" alt="" />
+  </div>
 
 <script>
   const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
@@ -61,20 +195,94 @@
     'Laudo Criado':['#A855F7','rgba(168,85,247,.15)'], 'Finalizado':['#00E676','rgba(0,230,118,.15)'],
     'Pronto p/ Fechamento':['#00E676','rgba(0,230,118,.15)'],
   };
-  const moeda = v => parseFloat(v||0).toFixed(2).replace('.',',');
-  const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  function abrirFoto(src){ const lb=document.getElementById('lightbox'); document.getElementById('lightboxImg').src=src; lb.style.display='flex'; }
+  function abrirFoto(src){
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = src;
+    lb.style.display = 'flex';
+  }
+  document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('lightbox').style.display='none'; });
+
+  function renderCashback(cb, os) {
+    if (!cb || !cb.ativo) return '';
+    const saldo = parseFloat(cb.saldo)||0;
+    const previsao = parseFloat(cb.previsaoEstaOS)||0;
+    const jaGerado = parseFloat(cb.gerado)||0;
+    const jaUsado = parseFloat(cb.usado)||0;
+    const statusPgto = os.statusPagamento || 'Pendente';
+    const osFinalizada = ['Finalizado','Entregue'].includes(os.status);
+
+    // Mensagem dinâmica baseada no estado
+    let msg = '';
+    if (osFinalizada && jaGerado > 0) {
+      msg = `🎉 <b>Você ganhou R$ ${moeda(jaGerado)}</b> de cashback nesta OS! Use em seu próximo serviço ou troque por película.`;
+    } else if (statusPgto === 'Pago' && previsao > 0) {
+      msg = `✨ Ao quitar esta OS, você <b>ganhará R$ ${moeda(previsao)}</b> de cashback automaticamente.`;
+    } else if (statusPgto === 'Parcial' && previsao > 0) {
+      msg = `💳 Pagamento parcial: ao quitar o restante, você acumulará <b>R$ ${moeda(previsao)}</b> de cashback.`;
+    } else {
+      msg = `💡 Ao pagar esta OS, você acumula <b>${cb.taxa}%</b> do valor em cashback para usar depois.`;
+    }
+
+    const temSaldo = saldo > 0;
+    const validade = cb.validadeMeses || 5;
+    const pelicula = cb.peliculaCustoCashback || 30;
+
+    return `
+      <div class="cb-card">
+        <div class="cb-head">
+          <div class="cb-icon">💰</div>
+          <div>
+            <h3>Programa de Cashback</h3>
+            <div style="font-size:11px; color:#9CA3AF; margin-top:2px;">Acumule e use em novos serviços</div>
+          </div>
+          <span class="tag">Cliente VIP</span>
+        </div>
+
+        <div class="cb-grid">
+          <div class="cb-box ${temSaldo?'pulse':''}">
+            <div class="lab">💰 Seu saldo atual</div>
+            <div class="val saldo">R$ ${moeda(saldo)}</div>
+            <div class="sub">${temSaldo ? 'Disponível para usar agora' : 'Faça seu 1º serviço'}</div>
+          </div>
+          <div class="cb-box">
+            <div class="lab">${osFinalizada && jaGerado>0 ? '✅ Ganho nesta OS' : '🎯 Você ganhará'}</div>
+            <div class="val">R$ ${moeda(osFinalizada && jaGerado>0 ? jaGerado : previsao)}</div>
+            <div class="sub">${osFinalizada && jaGerado>0 ? 'Já creditado' : 'Ao quitar esta OS'}</div>
+          </div>
+        </div>
+
+        <div class="cb-msg">${msg}</div>
+
+        <div class="cb-regras">
+          <span class="chip">📅 Válido por ${validade} meses</span>
+          <span class="chip">🛡️ ${moeda(pelicula)} = 1 película</span>
+          <span class="chip">💈 Desconto em serviço</span>
+          <span class="chip">⚡ Entrega em 1 dia útil</span>
+        </div>
+      </div>
+    `;
+  }
 
   async function carregar(){
-    if(!token){ el.innerHTML='<p class="err">Link inválido.</p>'; return; }
+    if(!token){ el.innerHTML='<p class="err">❌ Link inválido. Peça um novo link à loja.</p>'; return; }
     try{
       const r = await fetch(`${FB}/os_public/${encodeURIComponent(token)}.json`);
       const os = await r.json();
-      if(!os){ el.innerHTML='<p class="err">OS não encontrada.</p>'; return; }
+      if(!os){ el.innerHTML='<p class="err">⚠️ OS não encontrada. Verifique o link.</p>'; return; }
 
       if(os.expiraEm && new Date(os.expiraEm).getTime() < Date.now()){
-        el.innerHTML = `<div class="exp"><div class="big">⏳</div><b>Link expirado</b><p style="margin-top:8px;color:#9CA3AF;font-size:13px">Este link de acompanhamento expirou (validade de 90 dias).<br>Fale com a loja para mais informações.</p></div>`;
+        el.innerHTML = `
+          <div class="exp">
+            <div class="big">⏳</div>
+            <b style="font-size:18px; color:#F59E0B;">Link expirado</b>
+            <p style="margin-top:10px;color:#9CA3AF;font-size:13px;line-height:1.6">
+              Este link de acompanhamento expirou (validade de 90 dias).<br>
+              Entre em contato com a loja para mais informações.
+            </p>
+          </div>`;
         return;
       }
 
@@ -82,13 +290,24 @@
       const fotos = Array.isArray(os.fotos)?os.fotos:[];
       const pecas = Array.isArray(os.pecas)?os.pecas:[];
       const chk = os.checklist && typeof os.checklist==='object' ? Object.entries(os.checklist) : [];
-      const hist = (os.historico||[]).map((h,i,arr)=>`<div class="step ${i===arr.length-1?'on':''}"><div class="s">${esc(h.status)}</div><div class="d">${esc(h.data)}</div></div>`).join('');
+      const cashback = os.cashback || null;
+
+      // Timeline com entrada especial de cashback
+      const histArr = os.historico || [];
+      const histHtml = histArr.map((h,i,arr) => {
+        const isLast = i === arr.length-1;
+        const isCashEntry = (h.status||'').toLowerCase().includes('cashback');
+        const cls = isCashEntry ? 'step cash' : (isLast ? 'step on' : 'step');
+        return `<div class="${cls}"><div class="s">${esc(h.status)}</div><div class="d">${esc(h.data)}</div></div>`;
+      }).join('');
 
       el.innerHTML = `
         <div class="osnum">OS #${esc(os.numero)}</div>
-        <span class="status" style="color:${cor};background:${bg}">● ${esc(os.status)}</span>
+        <span class="status" style="color:${cor};background:${bg}">${esc(os.status)}</span>
 
-        <div class="card" style="margin-top:14px">
+        ${renderCashback(cashback, os)}
+
+        <div class="card">
           <p class="sec">👤 Cliente</p>
           <div class="row"><span class="k">Nome</span><span class="v">${esc(os.cliente)||'—'}</span></div>
           <div class="row"><span class="k">Telefone</span><span class="v">${esc(os.telefone)||'—'}</span></div>
@@ -99,45 +318,52 @@
           <div class="row"><span class="k">Tipo</span><span class="v">${esc(os.equipamento)||'—'}</span></div>
           <div class="row"><span class="k">Marca</span><span class="v">${esc(os.marca)||'—'}</span></div>
           <div class="row"><span class="k">Modelo</span><span class="v">${esc(os.modelo)||'—'}</span></div>
-          <div class="row"><span class="k">Nº Série / IMEI</span><span class="v">${esc(os.numeroSerie)||'—'}</span></div>
+          <div class="row"><span class="k">Nº Série / IMEI</span><span class="v" style="font-family:monospace;">${esc(os.numeroSerie)||'—'}</span></div>
         </div>
 
         <div class="card">
           <p class="sec">🔧 Defeito relatado</p>
           <p class="txt">${esc(os.defeito)||'—'}</p>
-          ${os.observacoes?`<p class="sec" style="margin-top:12px">📝 Observações</p><p class="txt">${esc(os.observacoes)}</p>`:''}
+          ${os.observacoes?`<p class="sec" style="margin-top:14px">📝 Observações</p><p class="txt">${esc(os.observacoes)}</p>`:''}
         </div>
 
         <div class="card">
           <p class="sec">💰 Valores</p>
           <div class="row"><span class="k">Entrada</span><span class="v">R$ ${moeda(os.valorEntrada)}</span></div>
           <div class="row"><span class="k">Total do serviço</span><span class="v">R$ ${moeda(os.valorOrcamento)}</span></div>
-          <div class="row"><span class="k">Restante</span><span class="v" style="color:${(os.valorRestante||0)>0?'#EF4444':'#00E676'}">R$ ${moeda(os.valorRestante)}</span></div>
+          ${cashback && cashback.usado > 0 ? `<div class="row"><span class="k" style="color:#F59E0B">💰 Cashback usado</span><span class="v" style="color:#F59E0B">- R$ ${moeda(cashback.usado)}</span></div>` : ''}
+          <div class="row"><span class="k">Restante</span><span class="v" style="color:${(os.valorRestante||0)>0?'#EF4444':'#00E676'}; font-weight:700;">R$ ${moeda(os.valorRestante)}</span></div>
           <div class="row"><span class="k">Pagamento</span><span class="v">${esc(os.formaPagamento)||'—'} • ${esc(os.statusPagamento)||'—'}</span></div>
         </div>
 
         ${pecas.length?`<div class="card"><p class="sec">🔩 Peças utilizadas</p>${pecas.map(p=>`<div class="row"><span class="k">${p.quantidade}x ${esc(p.nome)}</span><span class="v">R$ ${moeda((parseFloat(p.preco_unitario||p.valor||p.preco)||0)*(parseInt(p.quantidade)||1))}</span></div>`).join('')}</div>`:''}
 
-        ${chk.length?`<div class="card"><p class="sec">✅ Checklist de entrada</p>${chk.filter(([k])=>k!=='estadoGeral').map(([k,v])=>`<div class="chk ${v?'ok':'no'}"><span>${esc(k)}</span><span>${v?'✔':'—'}</span></div>`).join('')}${os.checklist&&os.checklist.estadoGeral?`<p class="txt" style="margin-top:6px;font-size:12px;color:#9CA3AF">Estado geral: ${esc(os.checklist.estadoGeral)}</p>`:''}</div>`:''}
+        ${chk.length?`<div class="card"><p class="sec">✅ Checklist de entrada</p>${chk.filter(([k])=>k!=='estadoGeral').map(([k,v])=>`<div class="chk ${v?'ok':'no'}"><span>${esc(k)}</span><span>${v?'✔':'—'}</span></div>`).join('')}${os.checklist&&os.checklist.estadoGeral?`<p class="txt" style="margin-top:8px;font-size:12px;color:#9CA3AF;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:8px;">💬 <b style="color:#E5E7EB;">Estado geral:</b> ${esc(os.checklist.estadoGeral)}</p>`:''}</div>`:''}
 
-        ${fotos.length?`<div class="card"><p class="sec">📸 Fotos do aparelho</p><div class="grid-fotos">${fotos.map(f=>`<img src="${f}" onclick="abrirFoto(this.src)" alt="Foto">`).join('')}</div></div>`:''}
+        ${fotos.length?`<div class="card"><p class="sec">📸 Fotos do aparelho (${fotos.length})</p><div class="grid-fotos">${fotos.map(f=>`<img src="${f}" onclick="abrirFoto(this.src)" alt="Foto" loading="lazy">`).join('')}</div></div>`:''}
 
-        ${os.laudo?`<div class="card"><p class="sec">📄 Laudo técnico</p><p class="txt">${esc(os.laudo)}</p></div>`:''}
+        ${os.laudo?`<div class="card" style="border-left:3px solid #A855F7;"><p class="sec" style="color:#A855F7;">📄 Laudo técnico</p><p class="txt">${esc(os.laudo)}</p></div>`:''}
 
         <div class="card">
           <p class="sec">🛠️ Responsável & garantia</p>
           <div class="row"><span class="k">Técnico</span><span class="v">${esc(os.tecnico)||'—'}</span></div>
-          <div class="row"><span class="k">Garantia</span><span class="v">${esc(os.garantia)||90} dias</span></div>
+          <div class="row"><span class="k">Garantia</span><span class="v" style="color:#00E676;">${esc(os.garantia)||90} dias</span></div>
         </div>
 
         <div class="card">
           <p class="sec">🕒 Linha do tempo</p>
-          <div class="timeline">${hist}</div>
+          <div class="timeline">${histHtml || '<div style="color:#6B7280;font-size:13px;">Nenhum evento registrado ainda.</div>'}</div>
         </div>
 
-        <div class="foot">Atualizado em ${esc(os.atualizadoEm)} • Link válido até ${os.expiraEm?new Date(os.expiraEm).toLocaleDateString('pt-BR'):''}</div>
+        <div style="text-align:center; padding:12px; color:#6B7280; font-size:11px;">
+          🔄 Atualizado em <b style="color:#E5E7EB;">${esc(os.atualizadoEm)}</b><br>
+          Link válido até <b style="color:#00E676;">${os.expiraEm?new Date(os.expiraEm).toLocaleDateString('pt-BR'):'—'}</b>
+        </div>
       `;
-    }catch(e){ el.innerHTML='<p class="err">Erro ao carregar. Tente novamente.</p>'; }
+    }catch(e){
+      console.error(e);
+      el.innerHTML='<p class="err">⚠️ Erro ao carregar. Verifique sua conexão e tente novamente.</p>';
+    }
   }
   carregar();
   setInterval(carregar, 15000);
