@@ -2,45 +2,75 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#070B0F" />
+<meta name="description" content="Acompanhe sua ordem de serviço em tempo real: status, fotos, valores e previsão de entrega." />
 <title>Acompanhamento de Serviço — OS-PREMIUM</title>
 <style>
   :root{
     --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07);
     --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6;
-    --r:18px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --r:20px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --safe-b:env(safe-area-inset-bottom,0px);
   }
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{scroll-behavior:smooth}
   body{
-    background:radial-gradient(1100px 520px at 50% -12%,rgba(0,230,118,.09),transparent 62%),var(--bg);
+    background:
+      radial-gradient(1100px 520px at 50% -12%,rgba(0,230,118,.10),transparent 62%),
+      radial-gradient(700px 400px at 100% 100%,rgba(59,130,246,.06),transparent 60%),
+      var(--bg);
     color:var(--txt);
     font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; padding:22px 14px 46px;
+    -webkit-font-smoothing:antialiased;
+    padding:0 14px calc(46px + var(--safe-b));
+    min-height:100vh;
   }
-  .wrap{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  .wrap{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:64px}
 
-  .brand{display:flex;align-items:center;gap:12px;padding:4px 2px 2px}
-  .brand .mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#00E676,#00B25A);display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,230,118,.28)}
-  .brand .mark svg{width:22px;height:22px;stroke:#04140B;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .brand h1{font-size:16px;font-weight:800;letter-spacing:.2px}
-  .brand p{font-size:12px;color:var(--mut)}
+  /* Barra fixa "AO VIVO" */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:50;height:56px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:0 16px;padding-top:env(safe-area-inset-top,0px);
+    background:rgba(7,11,15,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .topbar .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#00E676,#00B25A);display:grid;place-items:center;flex-shrink:0;box-shadow:0 6px 16px rgba(0,230,118,.28)}
+  .topbar .mark svg{width:18px;height:18px;stroke:#04140B;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .topbar b{font-size:14px;letter-spacing:.2px;white-space:nowrap}
+  .topbar .osref{font:700 12px/1 var(--mono);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--green);text-transform:uppercase;flex-shrink:0}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite}
+  @keyframes live{0%{box-shadow:0 0 0 0 rgba(0,230,118,.55)}70%{box-shadow:0 0 0 8px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
 
   .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
 
   .hero .lbl{font:700 11px/1 var(--mono);color:var(--mut);letter-spacing:1.6px;text-transform:uppercase}
-  .hero .num{font:800 30px/1.15 var(--mono);margin:8px 0 12px}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:800}
-  .pill i{width:8px;height:8px;border-radius:50%;background:currentColor;font-style:normal}
+  .hero .num{font:800 clamp(26px,7vw,34px)/1.15 var(--mono);margin:8px 0 12px}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:800}
+  .pill i{width:8px;height:8px;border-radius:50%;background:currentColor;font-style:normal;animation:live 1.8s infinite}
 
-  .pipe{display:flex;gap:6px;margin-top:18px}
-  .pipe .st{flex:1;text-align:center}
-  .pipe .bar{height:4px;border-radius:99px;background:rgba(255,255,255,.08);margin-bottom:8px;transition:background .3s}
-  .pipe .st.done .bar,.pipe .st.active .bar{background:var(--green)}
-  .pipe .st.active .bar{box-shadow:0 0 12px rgba(0,230,118,.5)}
-  .pipe .lb{font-size:11px;font-weight:700;color:var(--mut)}
+  /* Pipeline animado */
+  .pipe{display:flex;gap:4px;margin-top:20px}
+  .pipe .st{flex:1;position:relative;text-align:center}
+  .pipe .dot{width:30px;height:30px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--mut);position:relative;z-index:2}
+  .pipe .st.done .dot{background:linear-gradient(135deg,#00E676,#00B25A);border-color:transparent;color:#04140B}
+  .pipe .st.active .dot{background:rgba(0,230,118,.14);border-color:var(--green);color:var(--green);animation:live 1.8s infinite}
+  .pipe .st::before{content:'';position:absolute;top:15px;left:-50%;width:100%;height:2px;background:rgba(255,255,255,.08);z-index:1}
+  .pipe .st:first-child::before{display:none}
+  .pipe .st.done::before,.pipe .st.active::before{background:linear-gradient(90deg,#00B25A,#00E676)}
+  .pipe .lb{font-size:clamp(9px,2.6vw,11px);font-weight:700;color:var(--mut)}
   .pipe .st.done .lb,.pipe .st.active .lb{color:var(--txt)}
+
+  /* Barra de progresso do prazo */
+  .prazo{margin-top:18px}
+  .prazo .hd{display:flex;justify-content:space-between;font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+  .prazo .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+  .prazo .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00B25A,#00E676);transition:width .6s ease;box-shadow:0 0 12px rgba(0,230,118,.5)}
+  .prazo .fill.warn{background:linear-gradient(90deg,#EAB308,#FACC15)}
+  .prazo .fill.late{background:linear-gradient(90deg,#DC2626,#EF4444)}
 
   .sec{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:12px}
   .sec .ic{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:grid;place-items:center;font-size:13px}
@@ -48,18 +78,45 @@
   .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px}
   .row:last-child{border:0}
   .row .k{color:var(--mut)}
-  .row .v{font-weight:600;text-align:right}
+  .row .v{font-weight:600;text-align:right;word-break:break-word}
   .txt{font-size:14px;line-height:1.65;white-space:pre-wrap}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media(max-width:560px){.grid2{grid-template-columns:1fr}}
 
+  /* Card de entrega */
+  .ent{border:1px solid rgba(59,130,246,.35);background:linear-gradient(180deg,rgba(59,130,246,.10),rgba(59,130,246,.03));border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+  .ent::after{content:'';position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.16),transparent 70%);pointer-events:none}
+  .ent .hd{display:flex;align-items:center;gap:11px;margin-bottom:12px;position:relative;z-index:1}
+  .ent .hd .ic{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#3B82F6,#2563EB);display:grid;place-items:center;font-size:19px;box-shadow:0 8px 18px rgba(59,130,246,.25);flex-shrink:0}
+  .ent .hd b{font-size:14px;display:block}
+  .ent .hd span{font-size:11px;color:#9DB8E8}
+  .ent .big{font-size:clamp(16px,4.6vw,19px);font-weight:800;line-height:1.4;position:relative;z-index:1}
+  .ent .sub{font-size:12.5px;color:#B9C6D6;margin-top:6px;line-height:1.6;position:relative;z-index:1}
+  .ent .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:10px;position:relative;z-index:1}
+  .ent .seal{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(59,130,246,.3);font-size:10.5px;color:#8FA6C9;display:flex;align-items:center;gap:7px;position:relative;z-index:1}
+
+  /* Cashback */
+  .cb{border:1px solid rgba(245,158,11,.35);background:linear-gradient(180deg,rgba(245,158,11,.10),rgba(245,158,11,.03));border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+  .cb::after{content:'';position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.16),transparent 70%);pointer-events:none}
+  .cb .hd{display:flex;align-items:center;gap:11px;margin-bottom:13px;position:relative;z-index:1}
+  .cb .hd .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#F59E0B,#D97706);display:grid;place-items:center;font-size:18px;box-shadow:0 8px 18px rgba(245,158,11,.25);flex-shrink:0}
+  .cb .hd b{font-size:14px;display:block}
+  .cb .hd span{font-size:11px;color:#D9B36A}
+  .cb .vals{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1}
+  .cb .box{background:rgba(0,0,0,.28);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px}
+  .cb .box .l{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:#D9B36A;font-weight:800;margin-bottom:5px}
+  .cb .box .n{font:800 clamp(18px,5vw,22px)/1 var(--mono);color:#FCD34D}
+  .cb .msg{margin-top:12px;font-size:12.5px;color:#EBD9B4;line-height:1.6;background:rgba(0,0,0,.22);border:1px dashed rgba(245,158,11,.32);border-radius:10px;padding:10px 12px;position:relative;z-index:1}
+  .cb .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;position:relative;z-index:1}
+  .cb .tag{font-size:10.5px;font-weight:800;color:#FCD34D;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:4px 10px;border-radius:999px}
+
   .fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:zoom-in;transition:transform .18s ease}
-  .fotos img:hover{transform:scale(1.03)}
+  .fotos img:active{transform:scale(.97)}
   @media(max-width:480px){.fotos{grid-template-columns:repeat(2,1fr)}}
 
-  .chk{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:10px;margin-bottom:6px;font-size:13px;background:rgba(255,255,255,.03)}
+  .chk{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;margin-bottom:6px;font-size:13px;background:rgba(255,255,255,.03)}
   .chk.ok{background:rgba(0,230,118,.08);color:#B9F6D3}
   .chk.no{background:rgba(239,68,68,.08);color:#F2C4C4}
   .chk b{font-weight:800}
@@ -73,19 +130,10 @@
   .tl .t{font-size:14px;font-weight:700}
   .tl .d{font-size:12px;color:var(--mut)}
 
-  .cb{border:1px solid rgba(245,158,11,.35);background:linear-gradient(180deg,rgba(245,158,11,.10),rgba(245,158,11,.03));border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
-  .cb::after{content:'';position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.16),transparent 70%);pointer-events:none}
-  .cb .hd{display:flex;align-items:center;gap:11px;margin-bottom:13px;position:relative;z-index:1}
-  .cb .hd .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#F59E0B,#D97706);display:grid;place-items:center;font-size:18px;box-shadow:0 8px 18px rgba(245,158,11,.25)}
-  .cb .hd b{font-size:14px;display:block}
-  .cb .hd span{font-size:11px;color:#D9B36A}
-  .cb .vals{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1}
-  .cb .box{background:rgba(0,0,0,.28);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px}
-  .cb .box .l{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:#D9B36A;font-weight:800;margin-bottom:5px}
-  .cb .box .n{font:800 22px/1 var(--mono);color:#FCD34D}
-  .cb .msg{margin-top:12px;font-size:12.5px;color:#EBD9B4;line-height:1.6;background:rgba(0,0,0,.22);border:1px dashed rgba(245,158,11,.32);border-radius:10px;padding:10px 12px;position:relative;z-index:1}
-  .cb .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;position:relative;z-index:1}
-  .cb .tag{font-size:10.5px;font-weight:800;color:#FCD34D;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:4px 10px;border-radius:999px}
+  .actions{display:flex;gap:10px}
+  .btn{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:linear-gradient(135deg,#00E676,#00B25A);border-color:transparent;color:#04140B;box-shadow:0 8px 20px rgba(0,230,118,.25)}
 
   .skel{height:14px;border-radius:6px;margin-bottom:10px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.13),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.15s infinite}
   @keyframes sh{to{background-position:-200% 0}}
@@ -95,48 +143,65 @@
   .state b{font-size:17px}
   .state p{margin-top:8px;font-size:13px;color:var(--mut);line-height:1.6}
 
-  .foot{text-align:center;font-size:11.5px;color:var(--mut);padding-top:4px;line-height:1.7}
+  .foot{text-align:center;font-size:11.5px;color:var(--mut);padding-top:4px;line-height:1.8}
   .foot b{color:var(--green)}
 
   #lb{position:fixed;inset:0;background:rgba(0,0,0,.96);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
-  #lb img{max-width:94vw;max-height:92vh;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.8)}
-  #lb .x{position:fixed;top:14px;right:18px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:22px;display:grid;place-items:center;cursor:pointer}
+  #lb img{max-width:94vw;max-height:88vh;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.8)}
+  #lb .x{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;display:grid;place-items:center;cursor:pointer}
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--safe-b));z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 32px rgba(0,230,118,.35);opacity:0;pointer-events:none;transition:opacity .25s ease}
+  #toast.show{opacity:1}
+
+  @media print{
+    .topbar,.actions,#lb,#toast{display:none !important}
+    body{background:#fff;color:#111;padding:0}
+    .wrap{padding-top:0}
+    .card,.ent,.cb{background:#fff;border-color:#ddd;box-shadow:none;color:#111}
+    .row .k,.sec,.foot,.ent .sub,.cb .msg{color:#555}
+    .row .v,.txt,.tl .t{color:#111}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="topbar">
   <div class="brand">
     <div class="mark">
       <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4L14 13l-3-3 3.7-3.7z"/></svg>
     </div>
-    <div>
-      <h1>OS-PREMIUM</h1>
-      <p>Acompanhamento de serviço em tempo real</p>
+    <div style="min-width:0">
+      <b>OS-PREMIUM</b>
+      <div class="osref" id="topref">Carregando...</div>
     </div>
   </div>
+  <span class="live"><i></i>Ao vivo</span>
+</div>
 
+<div class="wrap">
   <div class="card" id="content">
     <div class="skel" style="width:38%"></div>
     <div class="skel" style="width:62%;height:26px"></div>
     <div class="skel" style="width:46%"></div>
     <div class="skel" style="width:80%"></div>
   </div>
-
-  <div class="foot">
-    <b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>
-    Seus dados são protegidos. Este link é exclusivo para esta ordem de serviço.
-  </div>
+  <div class="foot" id="foot"></div>
 </div>
 
 <div id="lb" onclick="this.style.display='none'">
   <div class="x" onclick="event.stopPropagation();document.getElementById('lb').style.display='none'">×</div>
   <img id="lbImg" src="" alt="" />
 </div>
+<div id="toast"></div>
 
 <script>
   const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
   const token = new URLSearchParams(location.search).get('t');
   const el = document.getElementById('content');
+  const foot = document.getElementById('foot');
+  const topref = document.getElementById('topref');
+  let lastJson = '';
+  let lastLoad = Date.now();
 
   const cores = {
     'Em Reparo':['#FACC15','rgba(250,204,21,.14)'], 'Aguardando Peça':['#3B82F6','rgba(59,130,246,.14)'],
@@ -154,14 +219,99 @@
   };
   const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  const parseBR = (s) => {
+    if (!s) return null;
+    const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{4})(?:[ ,]+(\d{2}):(\d{2}))?/);
+    if (!m) return null;
+    return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0));
+  };
+  const faltam = (min) => {
+    if (min < 0) return null;
+    if (min < 60) return `faltam ${min} min`;
+    const h = Math.floor(min/60), m = min%60;
+    if (h < 24) return m ? `faltam ${h}h ${m}min` : `faltam ${h}h`;
+    const d = Math.floor(h/24), rh = h%24;
+    return rh ? `faltam ${d}d ${rh}h` : `faltam ${d}d`;
+  };
   const abrirFoto = src => { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display='flex'; };
   document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('lb').style.display='none'; });
 
+  const toast = (msg) => {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  };
+  const compartilhar = () => {
+    const url = location.href;
+    if (navigator.share) { navigator.share({ title: 'Acompanhamento OS-PREMIUM', url }).catch(() => {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(() => toast('🔗 Link copiado!')).catch(() => {}); }
+    else toast('Copie o endereço do navegador');
+  };
+
   function pipeHtml(st){
     return '<div class="pipe">' + PIPE.map((lb,i)=>{
-      const n=i+1, cls = n<st?'st done':(n===st?'st active':'st');
-      return `<div class="${cls}"><div class="bar"></div><div class="lb">${lb}</div></div>`;
+      const n=i+1;
+      const cls = n<st?'st done':(n===st?'st active':'st');
+      const inner = n<st ? '✓' : (n===st ? '●' : n);
+      return `<div class="${cls}"><div class="dot">${inner}</div><div class="lb">${lb}</div></div>`;
     }).join('') + '</div>';
+  }
+
+  function prazoHtml(os, now){
+    if (!os.entrega_programada) return '';
+    const prog = new Date(os.entrega_programada);
+    if (isNaN(prog.getTime())) return '';
+    const start = parseBR((os.historico||[])[0] && (os.historico||[])[0].data);
+    if (!start || prog <= start) return '';
+    let pct = ((now - start) / (prog - start)) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    if (os.status === 'Entregue') pct = 100;
+    const cls = pct >= 100 ? (os.status==='Entregue' ? '' : 'late') : (pct > 85 ? 'warn' : '');
+    return `
+      <div class="prazo">
+        <div class="hd"><span>Entrada</span><span>${Math.round(pct)}% do prazo</span><span>Previsão</span></div>
+        <div class="bar"><div class="fill ${cls}" style="width:${pct}%"></div></div>
+      </div>`;
+  }
+
+  function entregaHtml(os, now){
+    if (!os.entrega_programada) return '';
+    const prog = new Date(os.entrega_programada);
+    if (isNaN(prog.getTime())) return '';
+    const diffMin = Math.round((prog - now) / 60000);
+    const fmt = cap(prog.toLocaleString('pt-BR',{weekday:'long', day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}));
+    let badge, badgeCor, titulo, sub;
+    if (os.status === 'Entregue') {
+      const last = (os.historico||[]).slice(-1)[0];
+      badge='✅ Concluído'; badgeCor='#00E676';
+      titulo='Aparelho entregue';
+      sub= last ? `Entrega registrada em ${esc(last.data)}. Obrigado pela preferência!` : 'Obrigado pela preferência!';
+    } else if (diffMin < 0) {
+      badge='🛠️ Em retoques finais'; badgeCor='#F59E0B';
+      titulo='Estamos finalizando seu aparelho';
+      sub='Nossa equipe está concluindo os últimos testes de qualidade. Em breve confirmamos a retirada por aqui e pelo WhatsApp.';
+    } else if (prog.toDateString() === now.toDateString()) {
+      badge='⏰ Hoje'; badgeCor='#FACC15';
+      titulo=`Fica pronto hoje, às ${prog.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+      sub=(faltam(diffMin)? cap(faltam(diffMin))+' — ':'')+'já deixaremos tudo separado e testado para você.';
+    } else {
+      badge='📅 Agendada'; badgeCor='#3B82F6';
+      titulo=fmt;
+      sub=faltam(diffMin)? cap(faltam(diffMin))+'. Qualquer alteração, avisaremos antes por aqui e pelo WhatsApp.' : '';
+    }
+    return `
+      <div class="ent">
+        <div class="hd">
+          <div class="ic">📅</div>
+          <div><b>Previsão de Entrega</b><span>Compromisso agendado com você</span></div>
+        </div>
+        <span class="badge" style="color:${badgeCor};background:${badgeCor}18;border:1px solid ${badgeCor}50">${badge}</span>
+        <div class="big">${esc(titulo)}</div>
+        ${sub?`<div class="sub">${esc(sub)}</div>`:''}
+        <div class="seal">🤝 Compromisso OS-PREMIUM: você acompanha cada etapa em tempo real, sem precisar ligar na loja.</div>
+      </div>`;
   }
 
   function cashbackHtml(cb, os){
@@ -196,26 +346,37 @@
     try{
       const r = await fetch(`${FB}/os_public/${encodeURIComponent(token)}.json`);
       const os = await r.json();
-      if(!os){ el.innerHTML='<div class="state"><div class="big">🔍</div><b>OS não encontrada</b><p>Verifique o link recebido ou fale com a loja.</p></div>'; return; }
+      const json = JSON.stringify(os);
+      lastLoad = Date.now();
+      if(!os){ el.innerHTML='<div class="state"><div class="big">🔍</div><b>OS não encontrada</b><p>Verifique o link recebido ou fale com a loja.</p></div>'; foot.innerHTML=''; return; }
       if(os.expiraEm && new Date(os.expiraEm).getTime() < Date.now()){
         el.innerHTML='<div class="state"><div class="big">⏳</div><b>Link expirado</b><p>Por segurança, este acompanhamento expirou.<br/>Entre em contato com a loja para mais informações.</p></div>';
+        foot.innerHTML='';
         return;
       }
+      if (json === lastJson) return;
+      lastJson = json;
 
+      const now = new Date();
       const [cor,bg] = cores[os.status] || ['#9CA3AF','rgba(156,163,175,.14)'];
       const fotos = Array.isArray(os.fotos)?os.fotos:[];
       const pecas = Array.isArray(os.pecas)?os.pecas:[];
       const chk = os.checklist && typeof os.checklist==='object' ? Object.entries(os.checklist) : [];
       const hist = os.historico || [];
+      const st = stage(os.status);
+
+      topref.textContent = `OS #${os.numero} • ${os.status}`;
 
       el.outerHTML = `
-        <div class="card hero">
+        <div class="card hero" id="content">
           <div class="lbl">Ordem de serviço</div>
           <div class="num">#${esc(os.numero)}</div>
           <span class="pill" style="color:${cor};background:${bg}"><i></i>${esc(os.status)}</span>
-          ${pipeHtml(stage(os.status))}
+          ${pipeHtml(st)}
+          ${prazoHtml(os, now)}
         </div>
 
+        ${entregaHtml(os, now)}
         ${cashbackHtml(os.cashback, os)}
 
         <div class="grid2">
@@ -251,7 +412,7 @@
 
         ${chk.length?`<div class="card"><div class="sec"><span class="ic">✅</span>Checklist de entrada</div>${chk.filter(([k])=>k!=='estadoGeral').map(([k,v])=>`<div class="chk ${v?'ok':'no'}"><span>${esc(k)}</span><b>${v?'✔ OK':'—'}</b></div>`).join('')}${os.checklist&&os.checklist.estadoGeral?`<p style="margin-top:8px;font-size:12.5px;color:var(--mut)">Estado geral: ${esc(os.checklist.estadoGeral)}</p>`:''}</div>`:''}
 
-        ${fotos.length?`<div class="card"><div class="sec"><span class="ic">📸</span>Fotos do aparelho</div><div class="fotos">${fotos.map(f=>`<img src="${f}" loading="lazy" onclick="abrirFoto(this.src)" alt="Foto do aparelho"/>`).join('')}</div></div>`:''}
+        ${fotos.length?`<div class="card"><div class="sec"><span class="ic">📸</span>Fotos do aparelho (${fotos.length})</div><div class="fotos">${fotos.map(f=>`<img src="${f}" loading="lazy" onclick="abrirFoto(this.src)" alt="Foto do aparelho"/>`).join('')}</div></div>`:''}
 
         ${os.laudo?`<div class="card" style="border-left:3px solid #A855F7"><div class="sec"><span class="ic">📄</span>Laudo técnico</div><p class="txt">${esc(os.laudo)}</p></div>`:''}
 
@@ -263,12 +424,24 @@
 
         ${hist.length?`<div class="card"><div class="sec"><span class="ic">🕒</span>Histórico</div><div class="tl">${hist.map((h,i)=>`<div class="ev ${i===hist.length-1?'last':''}"><div class="t">${esc(h.status)}</div><div class="d">${esc(h.data)}</div></div>`).join('')}</div></div>`:''}
 
-        <div class="foot" style="padding-top:2px">Atualizado em <b>${esc(os.atualizadoEm)}</b> • Válido até ${os.expiraEm?new Date(os.expiraEm).toLocaleDateString('pt-BR'):''}</div>
+        <div class="actions">
+          <button class="btn primary" onclick="compartilhar()"> Compartilhar</button>
+          <button class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
+        </div>
       `;
+
+      foot.innerHTML = `Atualizado <span id="upd">agora</span> • Válido até ${os.expiraEm?new Date(os.expiraEm).toLocaleDateString('pt-BR'):''}<br/><b>OS-PREMIUM</b> • Tecnologia que gera resultados`;
     }catch(e){
       el.innerHTML='<div class="state"><div class="big">⚠️</div><b>Não foi possível carregar</b><p>Verifique sua conexão e tente novamente.</p></div>';
     }
   }
+
+  setInterval(() => {
+    const s = Math.round((Date.now() - lastLoad) / 1000);
+    const upd = document.getElementById('upd');
+    if (upd) upd.textContent = s < 5 ? 'agora' : `há ${s}s`;
+  }, 5000);
+
   carregar();
   setInterval(carregar, 15000);
 </script>
