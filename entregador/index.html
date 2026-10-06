@@ -146,7 +146,7 @@
 
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:' Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    aceita:     { txt:'👍 Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
     em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
@@ -300,25 +300,24 @@
       }
       const btnAcao = document.getElementById('btn-acao-'+e.token);
       if(btnAcao){
+        btnAcao.onclick = null; // Remove listener antigo
         if(e.status === 'aguardando'){
           btnAcao.className = 'btn primary';
           btnAcao.innerHTML = '✅ Aceitar entrega';
-          btnAcao.dataset.acao = 'aceitar';
+          btnAcao.onclick = () => executarAcao(e, 'aceitar');
         } else if(e.status === 'aceita'){
           btnAcao.className = 'btn blue';
           btnAcao.innerHTML = '🛵 Iniciar rota';
-          btnAcao.dataset.acao = 'rota';
+          btnAcao.onclick = () => executarAcao(e, 'rota');
         } else if(e.status === 'em_rota'){
           btnAcao.className = 'btn gold';
-          btnAcao.innerHTML = ' Confirmar entrega';
-          btnAcao.dataset.acao = 'entregar';
+          btnAcao.innerHTML = '📦 Confirmar entrega';
+          btnAcao.onclick = () => executarAcao(e, 'entregar');
         }
-        btnAcao.onclick = () => executarAcao(e, btnAcao.dataset.acao);
       }
     });
   }
 
-  // 🗺️ INICIALIZA O MAPA COM TUDO VISÍVEL
   function inicializarMapa(e){
     const container = document.getElementById('mapa-'+e.token);
     if(!container || mapas[e.token]) return;
@@ -342,18 +341,14 @@
       rotaCalculada: false
     };
 
-    // Se já tem GPS, mostra o pino 🛵
     if(posicaoAtual) atualizarPosicaoNoMapa(e, posicaoAtual);
 
-    // Geocodifica o destino e mostra 📍 + rota
     if(e.endereco){
       geocodificarEndereco(e.endereco).then(coords => {
         if(coords){
           mapas[e.token].coordsDestino = coords;
           adicionarDestinoNoMapa(e, coords);
-          
-          // Traça a rota: do GPS atual (ou posição padrão) até o destino
-          const origem = posicaoAtual || { lat: -23.5505, lng: -46.6333 }; // São Paulo como fallback
+          const origem = posicaoAtual || { lat: -23.5505, lng: -46.6333 };
           traçarRota(e, origem, coords);
         }
         const loading = document.getElementById('mapa-loading-'+e.token);
@@ -382,13 +377,12 @@
     return null;
   }
 
-  // 🛣️ Traça a rota (chamado ao iniciar e a cada 30s quando GPS ativo)
   async function traçarRota(e, origem, destino){
     const m = mapas[e.token];
     if(!m) return;
 
     const agora = Date.now();
-    if(m.rotaCalculada && (agora - ultimaRotaCalculada) < 30000) return; // Recalcula a cada 30s no máximo
+    if(m.rotaCalculada && (agora - ultimaRotaCalculada) < 30000) return;
     ultimaRotaCalculada = agora;
     m.rotaCalculada = true;
 
@@ -500,12 +494,12 @@
     div.id = 'card-'+e.token;
 
     let acaoHtml = '';
-    if(e.status === 'aguardando') acaoHtml = '<button class="btn primary" id="btn-acao-'+e.token+'" data-acao="aceitar">✅ Aceitar entrega</button>';
-    else if(e.status === 'aceita') acaoHtml = '<button class="btn blue" id="btn-acao-'+e.token+'" data-acao="rota">🛵 Iniciar rota</button>';
-    else if(e.status === 'em_rota') acaoHtml = '<button class="btn gold" id="btn-acao-'+e.token+'" data-acao="entregar">📦 Confirmar entrega</button>';
+    if(e.status === 'aguardando') acaoHtml = '<button class="btn primary" id="btn-acao-'+e.token+'">✅ Aceitar entrega</button>';
+    else if(e.status === 'aceita') acaoHtml = '<button class="btn blue" id="btn-acao-'+e.token+'">🛵 Iniciar rota</button>';
+    else if(e.status === 'em_rota') acaoHtml = '<button class="btn gold" id="btn-acao-'+e.token+'">📦 Confirmar entrega</button>';
 
     const itensHtml = Array.isArray(e.itens) && e.itens.length > 0
-      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? '🔧 ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
+      ? '<div class="lbl" style="margin-top:10px"> O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? ' ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
       : '';
 
     div.innerHTML = `
@@ -515,7 +509,7 @@
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
-      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
       <div class="mapa-box" id="mapa-${e.token}">
@@ -545,68 +539,109 @@
         </div>
       </div>
     `;
+    
+    // Adiciona event listener diretamente
+    const btnAcao = div.querySelector('#btn-acao-'+e.token);
+    if(btnAcao){
+      if(e.status === 'aguardando') btnAcao.onclick = () => executarAcao(e, 'aceitar');
+      else if(e.status === 'aceita') btnAcao.onclick = () => executarAcao(e, 'rota');
+      else if(e.status === 'em_rota') btnAcao.onclick = () => executarAcao(e, 'entregar');
+    }
+    
     return div;
   }
 
   async function executarAcao(e, acao){
+    console.log('Ação executada:', acao, 'Token:', e.token);
+    
     if(acao === 'aceitar'){
       toast('✅ Entrega aceita!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     } else if(acao === 'rota'){
-      if(!('geolocation' in navigator)){ toast('❌ Este aparelho não tem GPS', true); return; }
-      iniciarGPS(false);
-      toast('🛵 Rota iniciada! GPS ligado.');
+      console.log('Iniciando GPS...');
+      if(!('geolocation' in navigator)){ 
+        toast('❌ Este aparelho não tem GPS', true); 
+        return; 
+      }
+      
+      // Atualiza badge GPS imediatamente
+      const badge = document.getElementById('gpsBadge');
+      const txt = document.getElementById('gpsTxt');
+      if(badge) badge.className = 'gps on';
+      if(txt) txt.textContent = 'GPS ON';
+      
+      // Atualiza todos os gpsBox
+      document.querySelectorAll('.gpsbox').forEach(box => {
+        box.className = 'gpsbox';
+        const t = box.querySelector('.t b');
+        if(t) t.textContent = 'GPS transmitindo ao vivo';
+      });
+      
+      iniciarGPS();
+      toast(' Rota iniciada! GPS ligado.');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'em_rota',rotaIniciadaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     } else if(acao === 'entregar'){
       if(!confirm('Confirmar que o cliente recebeu o pedido?')) return;
       pararGPS();
-      toast('📦 Entrega confirmada!');
+      toast(' Entrega confirmada!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     }
     setTimeout(carregarEntregas, 1000);
   }
 
-  // ️ GPS: atualiza pino e recalcula rota a cada 30s
-  function iniciarGPS(silencioso){
-    if(watchId !== null) return;
-    watchId = navigator.geolocation.watchPosition(pos => {
-      const { latitude, longitude, accuracy, speed } = pos.coords;
-      posicaoAtual = { lat: latitude, lng: longitude };
-      const agora = Date.now();
-      
-      // Envia posição a cada 5s
-      if(agora - ultimoEnvioGPS >= 5000){
-        ultimoEnvioGPS = agora;
+  function iniciarGPS(){
+    if(watchId !== null){
+      console.log('GPS já está ativo');
+      return;
+    }
+    
+    console.log('Solicitando permissão de GPS...');
+    watchId = navigator.geolocation.watchPosition(
+      pos => {
+        console.log('GPS recebido:', pos.coords.latitude, pos.coords.longitude);
+        const { latitude, longitude, accuracy, speed } = pos.coords;
+        posicaoAtual = { lat: latitude, lng: longitude };
+        const agora = Date.now();
+        
+        if(agora - ultimoEnvioGPS >= 5000){
+          ultimoEnvioGPS = agora;
+          entregas.forEach(e => {
+            if(e.status === 'em_rota'){
+              api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{
+                lat:latitude,
+                lng:longitude,
+                precisao:Math.round(accuracy||0),
+                velocidade:Math.round((speed||0)*3.6),
+                timestamp:new Date().toISOString()
+              }).catch(()=>{});
+            }
+          });
+        }
+        
         entregas.forEach(e => {
-          if(e.status === 'em_rota'){
-            api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
+          atualizarPosicaoNoMapa(e, posicaoAtual);
+          const m = mapas[e.token];
+          if(m && m.coordsDestino && (agora - ultimaRotaCalculada) >= 30000){
+            traçarRota(e, posicaoAtual, m.coordsDestino);
           }
         });
-      }
-      
-      // Atualiza pino no mapa
-      entregas.forEach(e => {
-        atualizarPosicaoNoMapa(e, posicaoAtual);
-        // Recalcula rota a cada 30s
-        const m = mapas[e.token];
-        if(m && m.coordsDestino && (agora - ultimaRotaCalculada) >= 30000){
-          traçarRota(e, posicaoAtual, m.coordsDestino);
-        }
-      });
-      
-      const badge = document.getElementById('gpsBadge');
-      const txt = document.getElementById('gpsTxt');
-      if(badge) badge.className = 'gps on';
-      if(txt) txt.textContent = 'GPS ON';
-    }, err => {
-      if(!silencioso) toast('❌ GPS negado: ' + err.message, true);
-      const txt = document.getElementById('gpsTxt');
-      if(txt) txt.textContent = 'GPS OFF';
-    }, { enableHighAccuracy:true, maximumAge:3000, timeout:15000 });
+      },
+      err => {
+        console.error('Erro GPS:', err);
+        toast('❌ GPS negado: ' + err.message, true);
+        const txt = document.getElementById('gpsTxt');
+        if(txt) txt.textContent = 'GPS OFF';
+      },
+      { enableHighAccuracy:true, maximumAge:3000, timeout:15000 }
+    );
   }
 
   function pararGPS(){
-    if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+    if(watchId !== null){ 
+      navigator.geolocation.clearWatch(watchId); 
+      watchId = null;
+      posicaoAtual = null;
+    }
   }
 
   (function init(){
