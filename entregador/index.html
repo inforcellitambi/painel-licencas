@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Entregador — OS-PREMIUM</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root{ --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07); --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6; --r:20px; --mono:ui-monospace,SFMono-Regular,Consolas,monospace; --safe-b:env(safe-area-inset-bottom,0px); }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -70,8 +71,8 @@
   .login-card .err{margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center}
   .entrega-item{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
   .entrega-item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-  .badge{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800}
-  .empty{text-align:center;padding:40px 20px;color:var(--mut)}
+  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:220px;background:#0E1A24}
+  .distancia{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);border-radius:10px;font-size:13px;font-weight:700;color:#3B82F6}
   .logout{margin-top:20px}
 </style>
 </head>
@@ -92,6 +93,7 @@
 
 <div id="toast"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
   const SESSION_KEY = 'os_entregador_sessao';
@@ -100,6 +102,8 @@
   let entregas = [];
   let watchId = null;
   let ultimoEnvioGPS = 0;
+  let posicaoAtual = null;
+  const mapas = {};
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -181,7 +185,7 @@
           <label>Senha</label>
           <input id="inpSenha" type="password" placeholder="••••" autocomplete="current-password" />
           ${erro ? '<div class="err">'+esc(erro)+'</div>' : ''}
-          <button class="btn primary" id="btnEntrar">🔐 Entrar</button>
+          <button class="btn primary" id="btnEntrar"> Entrar</button>
           <p style="margin-top:16px;font-size:11px;color:var(--mut);text-align:center;line-height:1.6">
             Seus dados de acesso foram fornecidos pela loja.<br/>Em caso de dúvida, entre em contato.
           </p>
@@ -224,7 +228,7 @@
               <p>Você não tem entregas ativas no momento.<br/>Novas entregas aparecerão aqui automaticamente.</p>
             </div>
           </div>
-          <button class="btn red logout" id="btnSair">🚪 Sair da conta</button>
+          <button class="btn red logout" id="btnSair"> Sair da conta</button>
         </div>
       `;
     } else {
@@ -234,6 +238,8 @@
       `;
       const lista = document.getElementById('listaEntregas');
       entregas.forEach(e => lista.appendChild(criarCardEntrega(e)));
+      // Inicializa os mapas depois que o DOM está pronto
+      setTimeout(() => entregas.forEach(e => inicializarMapa(e)), 200);
     }
     document.getElementById('btnSair').onclick = () => {
       if(confirm('Deseja sair da sua conta?')){
@@ -241,6 +247,110 @@
         renderLogin();
       }
     };
+  }
+
+  // 🗺️ Inicializa o mapa da entrega
+  function inicializarMapa(e){
+    const container = document.getElementById('mapa-'+e.token);
+    if(!container || mapas[e.token]) return;
+
+    const mapa = L.map(container, { zoomControl: false }).setView([-23.55, -46.63], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(mapa);
+
+    mapas[e.token] = { mapa, marcadorEntregador: null, marcadorDestino: null, linha: null };
+
+    // Se já temos posição do entregador, mostra
+    if(posicaoAtual){
+      atualizarMapaEntregador(e, posicaoAtual);
+    }
+
+    // Geocodifica o endereço do destino
+    if(e.endereco){
+      geocodificarEndereco(e.endereco).then(coords => {
+        if(coords) adicionarDestinoNoMapa(e, coords);
+      });
+    }
+
+    // Ajusta o tamanho do mapa (bug comum do Leaflet em containers ocultos)
+    setTimeout(() => mapa.invalidateSize(), 300);
+  }
+
+  // 📍 Converte endereço em coordenadas (Nominatim - OpenStreetMap, grátis)
+  async function geocodificarEndereco(endereco){
+    try{
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1&countrycodes=br`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'OS-Premium-Entregador/1.0' } });
+      const d = await r.json();
+      if(d && d.length > 0) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+    }catch(e){}
+    return null;
+  }
+
+  function adicionarDestinoNoMapa(e, coords){
+    const m = mapas[e.token];
+    if(!m) return;
+    const iconeDestino = L.divIcon({
+      html: '<div style="font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6))">📍</div>',
+      className: '', iconSize: [32, 32], iconAnchor: [16, 32]
+    });
+    m.marcadorDestino = L.marker([coords.lat, coords.lng], { icon: iconeDestino }).addTo(m.mapa)
+      .bindPopup(`<b>Destino</b><br/>${esc(e.cliente)}<br/>${esc(e.endereco)}`);
+
+    // Se já tem posição do entregador, desenha a linha
+    if(posicaoAtual && m.marcadorEntregador){
+      if(m.linha) m.mapa.removeLayer(m.linha);
+      m.linha = L.polyline([
+        [posicaoAtual.lat, posicaoAtual.lng],
+        [coords.lat, coords.lng]
+      ], { color: '#3B82F6', weight: 3, dashArray: '8 8', opacity: 0.8 }).addTo(m.mapa);
+      m.mapa.fitBounds(m.linha.getBounds(), { padding: [30, 30] });
+    } else {
+      m.mapa.setView([coords.lat, coords.lng], 15);
+    }
+  }
+
+  function atualizarMapaEntregador(e, pos){
+    const m = mapas[e.token];
+    if(!m) return;
+    const iconeMoto = L.divIcon({
+      html: '<div style="font-size:26px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6))">🛵</div>',
+      className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+    });
+    if(!m.marcadorEntregador){
+      m.marcadorEntregador = L.marker([pos.lat, pos.lng], { icon: iconeMoto }).addTo(m.mapa)
+        .bindPopup('<b>Você está aqui</b>');
+    } else {
+      m.marcadorEntregador.setLatLng([pos.lat, pos.lng]);
+    }
+
+    // Se tem destino, redesenha a linha
+    if(m.marcadorDestino){
+      const destLatLng = m.marcadorDestino.getLatLng();
+      if(m.linha) m.mapa.removeLayer(m.linha);
+      m.linha = L.polyline([
+        [pos.lat, pos.lng],
+        [destLatLng.lat, destLatLng.lng]
+      ], { color: '#3B82F6', weight: 3, dashArray: '8 8', opacity: 0.8 }).addTo(m.mapa);
+      m.mapa.fitBounds(m.linha.getBounds(), { padding: [30, 30] });
+
+      // Atualiza distância no card
+      const dist = calcularDistancia(pos.lat, pos.lng, destLatLng.lat, destLatLng.lng);
+      const elDist = document.getElementById('dist-'+e.token);
+      if(elDist) elDist.innerHTML = `📏 <b>${dist} km</b> até o destino`;
+    }
+  }
+
+  // 📏 Distância em km (Haversine)
+  function calcularDistancia(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const toRad = x => x * Math.PI / 180;
+    const dLat = toRad(lat2-lat1);
+    const dLng = toRad(lng2-lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(2);
   }
 
   function criarCardEntrega(e){
@@ -251,11 +361,11 @@
     div.className = 'entrega-item';
     let acao = '';
     if(e.status === 'aguardando') acao = '<button class="btn primary" data-acao="aceitar">✅ Aceitar entrega</button>';
-    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota"> Iniciar rota (liga o GPS)</button>';
+    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota">🛵 Iniciar rota (liga o GPS)</button>';
     else if(e.status === 'em_rota') acao = '<button class="btn gold" data-acao="entregar">📦 Confirmar entrega ao cliente</button>';
 
     const itensHtml = Array.isArray(e.itens) && e.itens.length > 0
-      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? ' ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
+      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? '🔧 ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
       : '';
 
     div.innerHTML = `
@@ -268,19 +378,21 @@
       ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
-      <div style="margin-top:14px">
+      <div class="mapa-box" id="mapa-${e.token}"></div>
+      <div class="distancia" id="dist-${e.token}">📏 <b>Calculando distância...</b></div>
+      <div style="margin-top:10px">
         <div class="row"><span class="k">Valor a receber</span><span class="v" style="color:var(--green)">R$ ${moeda(e.valor)}</span></div>
         <div class="row"><span class="k">Telefone</span><span class="v">${esc(e.telefone)||'—'}</span></div>
       </div>
       <div class="actions" style="margin-top:14px">
-        ${tel ? '<div class="grid2"><a class="btn" href="tel:'+tel+'">📞 Ligar</a><a class="btn" target="_blank" href="'+maps+'">🗺️ Como chegar</a></div>' : '<a class="btn" target="_blank" href="'+maps+'">🗺️ Como chegar</a>'}
+        ${tel ? '<div class="grid2"><a class="btn" href="tel:'+tel+'"> Ligar</a><a class="btn" target="_blank" href="'+maps+'">🗺️ Abrir no Google Maps</a></div>' : '<a class="btn" target="_blank" href="'+maps+'">🗺️ Abrir no Google Maps</a>'}
         ${acao}
       </div>
       <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox-${e.token}">
         <div class="dot"></div>
         <div class="t" id="gpsInfo-${e.token}">
           <b>${watchId!==null ? 'GPS transmitindo ao vivo' : 'GPS desligado'}</b>
-          ${watchId!==null ? 'A loja e o cliente veem sua posição.' : 'Ele liga ao iniciar a rota.'}
+          ${watchId!==null ? 'A loja vê sua posição no mapa.' : 'Ele liga ao iniciar a rota.'}
         </div>
       </div>
     `;
@@ -312,12 +424,14 @@
     if(watchId !== null) return;
     watchId = navigator.geolocation.watchPosition(pos => {
       const { latitude, longitude, accuracy, speed } = pos.coords;
+      posicaoAtual = { lat: latitude, lng: longitude };
       const agora = Date.now();
       if(agora - ultimoEnvioGPS < 5000) return;
       ultimoEnvioGPS = agora;
       entregas.forEach(e => {
         if(e.status === 'em_rota'){
           api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
+          atualizarMapaEntregador(e, posicaoAtual);
         }
       });
       const badge = document.getElementById('gpsBadge');
