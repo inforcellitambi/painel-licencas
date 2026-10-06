@@ -79,7 +79,7 @@
 
 <div class="topbar" id="topbar" style="display:none">
   <div class="brand">
-    <div class="mark"></div>
+    <div class="mark">🛵</div>
     <div style="min-width:0">
       <b>OS-PREMIUM <span style="color:var(--green)">Entregador</span></b>
       <div class="sub" id="topref">CARREGANDO...</div>
@@ -251,8 +251,12 @@
     div.className = 'entrega-item';
     let acao = '';
     if(e.status === 'aguardando') acao = '<button class="btn primary" data-acao="aceitar">✅ Aceitar entrega</button>';
-    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota">🛵 Iniciar rota (liga o GPS)</button>';
+    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota"> Iniciar rota (liga o GPS)</button>';
     else if(e.status === 'em_rota') acao = '<button class="btn gold" data-acao="entregar">📦 Confirmar entrega ao cliente</button>';
+
+    const itensHtml = Array.isArray(e.itens) && e.itens.length > 0
+      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? ' ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
+      : '';
 
     div.innerHTML = `
       <div class="head">
@@ -261,7 +265,8 @@
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
-      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${itensHtml}
       ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
       <div style="margin-top:14px">
         <div class="row"><span class="k">Valor a receber</span><span class="v" style="color:var(--green)">R$ ${moeda(e.valor)}</span></div>
