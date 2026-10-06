@@ -21,7 +21,6 @@
   .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:70px}
   .topbar{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;padding-top:env(safe-area-inset-top,0px);background:rgba(7,11,15,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
-  .mark{width:34px;height:34px;flex-shrink:0}
   .brand b{font-size:14px;white-space:nowrap}
   .brand .sub{font:700 10px/1 var(--mono);color:var(--mut);letter-spacing:1px}
   .gps{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut);flex-shrink:0}
@@ -32,7 +31,6 @@
   .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:800}
   .pill i{width:8px;height:8px;border-radius:50%;background:currentColor;font-style:normal;animation:live 1.8s infinite}
-  .num{font:800 clamp(26px,7vw,34px)/1.15 var(--mono);margin:8px 0 10px}
   .lbl{font:700 11px/1 var(--mono);color:var(--mut);letter-spacing:1.6px;text-transform:uppercase}
   .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px}
   .row:last-child{border:0}
@@ -58,10 +56,6 @@
   .state .big{font-size:46px;margin-bottom:12px}
   .state b{font-size:17px}
   .state p{margin-top:8px;font-size:13px;color:var(--mut);line-height:1.6}
-  .foot{text-align:center;font-size:11px;color:var(--mut);line-height:1.8;padding-top:4px}
-  .foot b{color:var(--green)}
-  .skel{height:14px;border-radius:6px;margin-bottom:10px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.13),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.15s infinite}
-  @keyframes sh{to{background-position:-200% 0}}
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--safe-b));z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 32px rgba(0,230,118,.35);opacity:0;pointer-events:none;transition:opacity .25s ease;max-width:90vw;text-align:center}
   #toast.show{opacity:1}
   #toast.err{background:rgba(239,68,68,.95);color:#fff}
@@ -76,7 +70,7 @@
   .login-card .err{margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center}
   .entrega-item{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
   .entrega-item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:260px;background:#0E1A24;position:relative}
+  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:240px;background:#0E1A24;position:relative}
   .mapa-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.9);color:var(--mut);font-size:13px;z-index:5}
   .info-rota{margin-top:10px;padding:12px;background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(0,230,118,.08));border:1px solid rgba(59,130,246,.35);border-radius:12px;display:flex;justify-content:space-between;align-items:center}
   .info-rota .item{flex:1;text-align:center}
@@ -94,12 +88,7 @@
 <body>
 
 <svg id="logo-svg" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <defs>
-    <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00E676"/>
-      <stop offset="100%" stop-color="#00B25A"/>
-    </linearGradient>
-  </defs>
+  <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E676"/><stop offset="100%" stop-color="#00B25A"/></linearGradient></defs>
   <rect width="100" height="100" rx="22" fill="url(#lg)"/>
   <path d="M20 62 L32 62 L40 44 L60 44 L68 62 L82 62" stroke="#070B0F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="33" cy="67" r="8" fill="#070B0F"/>
@@ -132,8 +121,9 @@
   let watchId = null;
   let ultimoEnvioGPS = 0;
   let posicaoAtual = null;
-  const mapas = {};
-  const destinosCache = {};
+  const mapas = {};       // { token: { mapa, marcadorMoto, marcadorDestino, linhaRota, coordsDestino, rotaCalculada } }
+  const cacheGeo = {};    // { endereco: {lat,lng} }
+  let primeiraRender = true;
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -154,8 +144,8 @@
 
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:'👍 Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
-    em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
+    aceita:     { txt:' Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    em_rota:    { txt:' Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
   };
@@ -215,12 +205,9 @@
           <label>Senha</label>
           <input id="inpSenha" type="password" placeholder="••••" autocomplete="current-password" />
           ${erro ? '<div class="err">'+esc(erro)+'</div>' : ''}
-          <button class="btn primary" id="btnEntrar">🔐 Entrar</button>
+          <button class="btn primary" id="btnEntrar"> Entrar</button>
           <p style="margin-top:16px;font-size:11px;color:var(--mut);text-align:center;line-height:1.6">
             Seus dados de acesso foram fornecidos pela loja.<br/>Em caso de dúvida, entre em contato.
-          </p>
-          <p style="margin-top:14px;font-size:10px;color:var(--mut);text-align:center">
-            💡 Dica: após entrar, adicione esta página à tela inicial para usar como app.
           </p>
         </div>
       </div>
@@ -235,7 +222,7 @@
         toast('✅ Bem-vindo, '+res.ent.nome+'!');
         renderApp();
         carregarEntregas();
-        setInterval(carregarEntregas, 5000);
+        setInterval(carregarEntregas, 8000); //  menos polling (era 5s)
       } else {
         renderLogin(res.erro);
       }
@@ -248,8 +235,17 @@
     renderLista();
   }
 
+  //  RENDERIZAÇÃO INTELIGENTE: só recria o que mudou
   function renderLista(){
     const app = document.getElementById('app');
+    const listaEl = document.getElementById('listaEntregas');
+
+    // Se a lista já existe e a quantidade não mudou, só atualiza status (não recria tudo)
+    if(listaEl && entregas.length > 0){
+      atualizarStatusCards();
+      return;
+    }
+
     if(entregas.length === 0){
       app.innerHTML = `
         <div class="wrap">
@@ -263,14 +259,39 @@
           <button class="btn red logout" id="btnSair">🚪 Sair da conta</button>
         </div>
       `;
+      // Limpa mapas órfãos
+      Object.keys(mapas).forEach(k => { if(mapas[k].mapa) mapas[k].mapa.remove(); });
+      for(let k in mapas) delete mapas[k];
     } else {
-      app.innerHTML = `
-        <div class="wrap" id="listaEntregas"></div>
-        <button class="btn red logout" id="btnSair" style="max-width:560px;margin:0 auto"> Sair da conta</button>
-      `;
+      if(!listaEl){
+        app.innerHTML = `
+          <div class="wrap" id="listaEntregas"></div>
+          <button class="btn red logout" id="btnSair" style="max-width:560px;margin:0 auto">🚪 Sair da conta</button>
+        `;
+      }
       const lista = document.getElementById('listaEntregas');
-      entregas.forEach(e => lista.appendChild(criarCardEntrega(e)));
-      setTimeout(() => entregas.forEach(e => inicializarMapa(e)), 300);
+      // Só cria cards que ainda não existem
+      entregas.forEach(e => {
+        if(!document.getElementById('card-'+e.token)){
+          lista.appendChild(criarCardEntrega(e));
+        }
+      });
+      // Remove cards que não estão mais na lista
+      const tokensAtuais = new Set(entregas.map(e => e.token));
+      document.querySelectorAll('.entrega-item').forEach(el => {
+        const t = el.dataset.token;
+        if(t && !tokensAtuais.has(t)){
+          if(mapas[t] && mapas[t].mapa) mapas[t].mapa.remove();
+          delete mapas[t];
+          el.remove();
+        }
+      });
+      // Inicializa mapas dos novos cards
+      setTimeout(() => {
+        entregas.forEach(e => {
+          if(!mapas[e.token]) inicializarMapa(e);
+        });
+      }, 200);
     }
     document.getElementById('btnSair').onclick = () => {
       if(confirm('Deseja sair da sua conta?')){
@@ -280,32 +301,62 @@
     };
   }
 
-  // ️ Inicializa o mapa da entrega
+  // Atualiza só o badge de status sem recriar o card
+  function atualizarStatusCards(){
+    entregas.forEach(e => {
+      const pill = document.getElementById('pill-'+e.token);
+      if(pill){
+        const st = STATUS[e.status] || STATUS.aguardando;
+        pill.style.color = st.cor;
+        pill.style.background = st.bg;
+        pill.innerHTML = `<i></i>${st.txt}`;
+      }
+    });
+  }
+
+  //  INICIALIZA O MAPA (uma vez só por entrega)
   function inicializarMapa(e){
     const container = document.getElementById('mapa-'+e.token);
     if(!container || mapas[e.token]) return;
 
-    const mapa = L.map(container, { zoomControl: false, attributionControl: false }).setView([-23.55, -46.63], 13);
+    // ⚡ preferCanvas melhora performance em mobile
+    const mapa = L.map(container, {
+      zoomControl: false,
+      attributionControl: false,
+      preferCanvas: true,
+      fadeAnimation: false,
+      zoomAnimation: false
+    }).setView([-23.55, -46.63], 13);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
+      maxZoom: 17, // ⚡ zoom máximo menor = tiles menores = mais rápido
     }).addTo(mapa);
 
-    mapas[e.token] = { mapa, marcadorEntregador: null, marcadorDestino: null, linhaRota: null, coordsDestino: null };
+    mapas[e.token] = {
+      mapa,
+      marcadorMoto: null,
+      marcadorDestino: null,
+      linhaRota: null,
+      coordsDestino: null,
+      rotaCalculada: false,
+      ultimaRota: 0
+    };
 
     // Se já tem posição do entregador, coloca no mapa
-    if(posicaoAtual) atualizarMapaEntregador(e, posicaoAtual);
+    if(posicaoAtual) atualizarPosicaoNoMapa(e, posicaoAtual);
 
-    // Geocodifica o endereço do destino
+    // Geocodifica o destino (com cache)
     if(e.endereco){
       const loading = document.getElementById('mapa-loading-'+e.token);
       if(loading) loading.style.display = 'flex';
       geocodificarEndereco(e.endereco).then(coords => {
         if(coords){
-          destinosCache[e.token] = coords;
           mapas[e.token].coordsDestino = coords;
           adicionarDestinoNoMapa(e, coords);
-          // Se já tem posição, traça a rota real
-          if(posicaoAtual) traçarRotaReal(e, posicaoAtual, coords);
+          // Se já tem GPS, traça a rota UMA VEZ
+          if(posicaoAtual && !mapas[e.token].rotaCalculada){
+            traçarRota(e, posicaoAtual, coords);
+          }
         }
         if(loading) loading.style.display = 'none';
       });
@@ -314,67 +365,91 @@
     setTimeout(() => mapa.invalidateSize(), 400);
   }
 
-  // 📍 Converte endereço em coordenadas (Nominatim - grátis)
+  // 📍 Geocoding com cache
   async function geocodificarEndereco(endereco){
+    if(cacheGeo[endereco]) return cacheGeo[endereco];
     try{
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1&countrycodes=br`;
       const r = await fetch(url, { headers: { 'User-Agent': 'OS-Premium-Entregador/1.0' } });
       const d = await r.json();
-      if(d && d.length > 0) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+      if(d && d.length > 0){
+        const c = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+        cacheGeo[endereco] = c;
+        return c;
+      }
     }catch(e){}
     return null;
   }
 
-  // 🛣️ Traça a ROTA REAL usando OSRM (grátis, sem API key)
-  async function traçarRotaReal(e, origem, destino){
+  // 🛣️ Traça a rota REAL (chamado UMA VEZ só)
+  async function traçarRota(e, origem, destino){
     const m = mapas[e.token];
-    if(!m) return;
+    if(!m || m.rotaCalculada) return; //  não recalcula
+    m.rotaCalculada = true;
+
+    // Timeout: se OSRM demorar > 3s, usa linha reta como fallback
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     try{
       const url = `${OSRM_URL}${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson`;
-      const r = await fetch(url);
+      const r = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
       const d = await r.json();
 
       if(d.code === 'Ok' && d.routes && d.routes.length > 0){
         const rota = d.routes[0];
-        const coords = rota.geometry.coordinates.map(c => [c[1], c[0]]); // inverte para [lat,lng]
-
-        // Remove linha anterior se existir
-        if(m.linhaRota) m.mapa.removeLayer(m.linhaRota);
-
-        // Desenha a rota real (azul, grossa, seguindo as ruas)
-        m.linhaRota = L.polyline(coords, {
-          color: '#3B82F6',
-          weight: 6,
-          opacity: 0.9,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }).addTo(m.mapa);
-
-        // Ajusta o zoom para mostrar toda a rota
-        m.mapa.fitBounds(m.linhaRota.getBounds(), { padding: [30, 30] });
-
-        // Atualiza informações de distância e tempo
-        const distKm = (rota.distance / 1000).toFixed(1);
-        const tempoMin = Math.round(rota.duration / 60);
-        const elInfo = document.getElementById('info-rota-'+e.token);
-        if(elInfo){
-          elInfo.innerHTML = `
-            <div class="item">
-              <div class="n">${distKm} km</div>
-              <div class="l">Distância</div>
-            </div>
-            <div class="divisor"></div>
-            <div class="item">
-              <div class="n">${tempoMin} min</div>
-              <div class="l">Tempo estimado</div>
-            </div>
-          `;
-        }
+        const coords = rota.geometry.coordinates.map(c => [c[1], c[0]]);
+        desenharRota(e, coords, rota.distance, rota.duration);
+      } else {
+        desenharLinhaReta(e, origem, destino);
       }
-    }catch(e){
-      console.warn('Erro ao traçar rota:', e);
+    }catch(err){
+      clearTimeout(timeout);
+      console.warn('OSRM falhou, usando linha reta:', err);
+      desenharLinhaReta(e, origem, destino);
     }
+  }
+
+  function desenharRota(e, coords, distancia, duracao){
+    const m = mapas[e.token];
+    if(!m) return;
+    if(m.linhaRota) m.mapa.removeLayer(m.linhaRota);
+    m.linhaRota = L.polyline(coords, {
+      color: '#3B82F6',
+      weight: 5,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(m.mapa);
+    m.mapa.fitBounds(m.linhaRota.getBounds(), { padding: [25, 25] });
+    atualizarInfoRota(e, distancia, duracao);
+  }
+
+  function desenharLinhaReta(e, origem, destino){
+    const m = mapas[e.token];
+    if(!m) return;
+    if(m.linhaRota) m.mapa.removeLayer(m.linhaRota);
+    m.linhaRota = L.polyline(
+      [[origem.lat, origem.lng], [destino.lat, destino.lng]],
+      { color: '#3B82F6', weight: 4, opacity: 0.7, dashArray: '8 8' }
+    ).addTo(m.mapa);
+    const bounds = L.latLngBounds([[origem.lat, origem.lng], [destino.lat, destino.lng]]);
+    m.mapa.fitBounds(bounds, { padding: [25, 25] });
+    const dist = calcularDistancia(origem.lat, origem.lng, destino.lat, destino.lng);
+    atualizarInfoRota(e, parseFloat(dist)*1000, parseFloat(dist)*1000/30*60); // estimativa 30km/h
+  }
+
+  function atualizarInfoRota(e, distanciaMetros, duracaoSeg){
+    const elInfo = document.getElementById('info-rota-'+e.token);
+    if(!elInfo) return;
+    const distKm = (distanciaMetros/1000).toFixed(1);
+    const tempoMin = Math.max(1, Math.round(duracaoSeg/60));
+    elInfo.innerHTML = `
+      <div class="item"><div class="n">${distKm} km</div><div class="l">Distância</div></div>
+      <div class="divisor"></div>
+      <div class="item"><div class="n">${tempoMin} min</div><div class="l">Tempo est.</div></div>
+    `;
   }
 
   function adicionarDestinoNoMapa(e, coords){
@@ -386,30 +461,33 @@
     });
     m.marcadorDestino = L.marker([coords.lat, coords.lng], { icon: iconeDestino }).addTo(m.mapa)
       .bindPopup(`<b>📍 Destino</b><br/><b>${esc(e.cliente)}</b><br/>${esc(e.endereco)}`);
-
-    if(!posicaoAtual){
-      m.mapa.setView([coords.lat, coords.lng], 15);
-    }
+    if(!posicaoAtual) m.mapa.setView([coords.lat, coords.lng], 15);
   }
 
-  function atualizarMapaEntregador(e, pos){
+  // ⚡ Só move o pino (não recalcula rota)
+  function atualizarPosicaoNoMapa(e, pos){
     const m = mapas[e.token];
     if(!m) return;
     const iconeMoto = L.divIcon({
-      html: '<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',
+      html: '<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))">🛵</div>',
       className: '', iconSize: [32, 32], iconAnchor: [16, 16]
     });
-    if(!m.marcadorEntregador){
-      m.marcadorEntregador = L.marker([pos.lat, pos.lng], { icon: iconeMoto }).addTo(m.mapa)
-        .bindPopup('<b>🛵 Você está aqui</b>');
+    if(!m.marcadorMoto){
+      m.marcadorMoto = L.marker([pos.lat, pos.lng], { icon: iconeMoto }).addTo(m.mapa)
+        .bindPopup('<b> Você está aqui</b>');
     } else {
-      m.marcadorEntregador.setLatLng([pos.lat, pos.lng]);
+      m.marcadorMoto.setLatLng([pos.lat, pos.lng]);
     }
+    //  Não recentraliza o mapa a cada GPS (deixa o usuário navegar)
+  }
 
-    // Se tem destino, traça a rota real
-    if(m.coordsDestino){
-      traçarRotaReal(e, pos, m.coordsDestino);
-    }
+  function calcularDistancia(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const toRad = x => x * Math.PI / 180;
+    const dLat = toRad(lat2-lat1);
+    const dLng = toRad(lng2-lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(2);
   }
 
   function criarCardEntrega(e){
@@ -418,45 +496,42 @@
     const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(e.endereco || e.cliente || '');
     const div = document.createElement('div');
     div.className = 'entrega-item';
+    div.dataset.token = e.token;
+    div.id = 'card-'+e.token;
+
     let acao = '';
     if(e.status === 'aguardando') acao = '<button class="btn primary" data-acao="aceitar">✅ Aceitar entrega</button>';
-    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota">🛵 Iniciar rota (liga o GPS)</button>';
-    else if(e.status === 'em_rota') acao = '<button class="btn gold" data-acao="entregar">📦 Confirmar entrega ao cliente</button>';
+    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota">🛵 Iniciar rota</button>';
+    else if(e.status === 'em_rota') acao = '<button class="btn gold" data-acao="entregar">📦 Confirmar entrega</button>';
 
     const itensHtml = Array.isArray(e.itens) && e.itens.length > 0
-      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? '🔧 ' : '📦 ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
+      ? '<div class="lbl" style="margin-top:10px">📦 O que levar (' + e.itens.length + ' itens)</div><div style="margin-top:6px">' + e.itens.map(it => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>' + (it.tipo === 'servico' ? '🔧 ' : ' ') + esc(it.nome) + '</span><span style="color:var(--green);font-weight:700">x' + it.quantidade + '</span></div>').join('') + '</div>'
       : '';
 
     div.innerHTML = `
       <div class="head">
-        <span class="pill" style="color:${st.cor};background:${st.bg}"><i></i>${st.txt}</span>
+        <span class="pill" id="pill-${e.token}" style="color:${st.cor};background:${st.bg}"><i></i>${st.txt}</span>
         <span style="font:800 18px/1 var(--mono)">OS #${esc(e.numero)}</span>
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
       ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
-      ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
+      ${e.observacoes ? '<div class="obs"> ' + esc(e.observacoes) + '</div>' : ''}
       <div class="mapa-box" id="mapa-${e.token}">
         <div class="mapa-loading" id="mapa-loading-${e.token}">🗺️ Carregando mapa...</div>
       </div>
       <div class="info-rota" id="info-rota-${e.token}">
-        <div class="item">
-          <div class="n">—</div>
-          <div class="l">Distância</div>
-        </div>
+        <div class="item"><div class="n">—</div><div class="l">Distância</div></div>
         <div class="divisor"></div>
-        <div class="item">
-          <div class="n">—</div>
-          <div class="l">Tempo</div>
-        </div>
+        <div class="item"><div class="n">—</div><div class="l">Tempo</div></div>
       </div>
       <div style="margin-top:10px">
         <div class="row"><span class="k">Valor a receber</span><span class="v" style="color:var(--green)">R$ ${moeda(e.valor)}</span></div>
         <div class="row"><span class="k">Telefone</span><span class="v">${esc(e.telefone)||'—'}</span></div>
       </div>
       <div class="actions" style="margin-top:14px">
-        ${tel ? '<div class="grid2"><a class="btn" href="tel:'+tel+'"> Ligar</a><a class="btn" target="_blank" href="'+maps+'">🗺️ Google Maps</a></div>' : '<a class="btn" target="_blank" href="'+maps+'">️ Google Maps</a>'}
+        ${tel ? '<div class="grid2"><a class="btn" href="tel:'+tel+'">📞 Ligar</a><a class="btn" target="_blank" href="'+maps+'">🗺️ Google Maps</a></div>' : '<a class="btn" target="_blank" href="'+maps+'">🗺️ Google Maps</a>'}
         ${acao}
       </div>
       <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox-${e.token}">
@@ -491,18 +566,24 @@
     setTimeout(carregarEntregas, 1000);
   }
 
+  // ⚡ GPS otimizado: só envia a cada 5s, só move pino (não recalcula rota)
   function iniciarGPS(silencioso){
     if(watchId !== null) return;
     watchId = navigator.geolocation.watchPosition(pos => {
       const { latitude, longitude, accuracy, speed } = pos.coords;
       posicaoAtual = { lat: latitude, lng: longitude };
       const agora = Date.now();
-      if(agora - ultimoEnvioGPS < 5000) return;
+      if(agora - ultimoEnvioGPS < 5000) return; // throttle 5s
       ultimoEnvioGPS = agora;
       entregas.forEach(e => {
         if(e.status === 'em_rota'){
           api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
-          atualizarMapaEntregador(e, posicaoAtual);
+          atualizarPosicaoNoMapa(e, posicaoAtual);
+          // ⚡ Só recalcula rota se ainda não foi calculada
+          const m = mapas[e.token];
+          if(m && m.coordsDestino && !m.rotaCalculada){
+            traçarRota(e, posicaoAtual, m.coordsDestino);
+          }
         }
       });
       const badge = document.getElementById('gpsBadge');
@@ -526,7 +607,7 @@
       sessao = s;
       renderApp();
       carregarEntregas();
-      setInterval(carregarEntregas, 5000);
+      setInterval(carregarEntregas, 8000);
     } else {
       renderLogin();
     }
