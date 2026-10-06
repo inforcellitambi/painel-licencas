@@ -7,26 +7,11 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="description" content="App do entregador OS-PREMIUM: receba pedidos, navegue e confirme entregas com GPS ao vivo." />
 <title>Entregador — OS-PREMIUM</title>
 <style>
-  :root{
-    --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07);
-    --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6;
-    --r:20px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
+  :root{ --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07); --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6; --r:20px; --mono:ui-monospace,SFMono-Regular,Consolas,monospace; --safe-b:env(safe-area-inset-bottom,0px); }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{
-    background:
-      radial-gradient(1100px 520px at 50% -12%,rgba(0,230,118,.10),transparent 62%),
-      var(--bg);
-    color:var(--txt);
-    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    padding:0 14px calc(30px + var(--safe-b));
-    min-height:100vh;
-  }
+  body{background:radial-gradient(1100px 520px at 50% -12%,rgba(0,230,118,.10),transparent 62%),var(--bg);color:var(--txt);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;padding:0 14px calc(30px + var(--safe-b));min-height:100vh}
   .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:70px}
   .topbar{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;padding-top:env(safe-area-inset-top,0px);background:rgba(7,11,15,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
@@ -55,6 +40,7 @@
   .btn.primary{background:linear-gradient(135deg,#00E676,#00B25A);border-color:transparent;color:#04140B;box-shadow:0 8px 20px rgba(0,230,118,.25)}
   .btn.blue{background:linear-gradient(135deg,#3B82F6,#2563EB);border-color:transparent;color:#fff;box-shadow:0 8px 20px rgba(59,130,246,.25)}
   .btn.gold{background:linear-gradient(135deg,#F59E0B,#D97706);border-color:transparent;color:#000;box-shadow:0 8px 20px rgba(245,158,11,.25)}
+  .btn.red{background:linear-gradient(135deg,#EF4444,#DC2626);border-color:transparent;color:#fff;box-shadow:0 8px 20px rgba(239,68,68,.25)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .gpsbox{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25)}
   .gpsbox .dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite;flex-shrink:0}
@@ -73,13 +59,27 @@
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--safe-b));z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 32px rgba(0,230,118,.35);opacity:0;pointer-events:none;transition:opacity .25s ease;max-width:90vw;text-align:center}
   #toast.show{opacity:1}
   #toast.err{background:rgba(239,68,68,.95);color:#fff}
+  .login-wrap{max-width:420px;margin:0 auto;padding:0 14px}
+  .login-card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:28px;box-shadow:0 14px 34px rgba(0,0,0,.35);margin-top:60px}
+  .login-card h2{font-size:22px;font-weight:800;margin-bottom:6px}
+  .login-card .sub{font-size:13px;color:var(--mut);margin-bottom:22px}
+  .login-card label{display:block;font:700 11px/1 var(--mono);color:var(--mut);letter-spacing:1.6px;text-transform:uppercase;margin-bottom:6px;margin-top:14px}
+  .login-card input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-size:15px;font-family:inherit;outline:none}
+  .login-card input:focus{border-color:var(--green)}
+  .login-card .btn{width:100%;margin-top:22px}
+  .login-card .err{margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center}
+  .entrega-item{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+  .entrega-item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+  .badge{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800}
+  .empty{text-align:center;padding:40px 20px;color:var(--mut)}
+  .logout{margin-top:20px}
 </style>
 </head>
 <body>
 
-<div class="topbar">
+<div class="topbar" id="topbar" style="display:none">
   <div class="brand">
-    <div class="mark">🛵</div>
+    <div class="mark"></div>
     <div style="min-width:0">
       <b>OS-PREMIUM <span style="color:var(--green)">Entregador</span></b>
       <div class="sub" id="topref">CARREGANDO...</div>
@@ -88,141 +88,219 @@
   <span class="gps" id="gpsBadge"><i></i><span id="gpsTxt">GPS OFF</span></span>
 </div>
 
-<div class="wrap">
-  <div class="card" id="content">
-    <div class="skel" style="width:38%"></div>
-    <div class="skel" style="width:62%;height:26px"></div>
-    <div class="skel" style="width:80%"></div>
-  </div>
-  <div class="foot"><b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>Dica: adicione esta página à tela inicial para usar como app.</div>
-</div>
+<div id="app"></div>
 
 <div id="toast"></div>
 
 <script>
   const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
-  const token = new URLSearchParams(location.search).get('t');
-  const el = () => document.getElementById('content');
-  let lastJson = '';
-  let entrega = null;
+  const SESSION_KEY = 'os_entregador_sessao';
+
+  let sessao = null;
+  let entregas = [];
   let watchId = null;
   let ultimoEnvioGPS = 0;
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
+  function hashSenha(s){
+    let h = 5381; const str = String(s);
+    for(let i=0;i<str.length;i++) h = ((h<<5)+h+str.charCodeAt(i))>>>0;
+    return 'h'+h.toString(36);
+  }
+
+  const toast = (msg, err) => {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = err ? 'show err' : 'show';
+    setTimeout(() => { t.className = ''; }, 2600);
+  };
+
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
     aceita:     { txt:'👍 Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
     em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
-    cancelada:  { txt:'❌ Entrega cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
+    cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
   };
 
-  const toast = (msg, err) => {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = err ? 'show err' : 'show';
-    setTimeout(() => { t.className = ''; }, 2600);
-  };
-
-  async function carregar(){
-    if(!token){ el().innerHTML = '<div class="state"><div class="big">🔗</div><b>Link inválido</b><p>Solicite à loja um novo link de entrega.</p></div>'; return; }
-    try{
-      const r = await fetch(FB + '/entregas/' + encodeURIComponent(token) + '.json');
-      const d = await r.json();
-      const json = JSON.stringify(d);
-      if(json === lastJson) return;
-      lastJson = json;
-      entrega = d;
-      render();
-    }catch(e){
-      el().innerHTML = '<div class="state"><div class="big">⚠️</div><b>Sem conexão</b><p>Verifique sua internet e tente novamente.</p></div>';
-    }
+  async function api(path, method, body){
+    const opts = { method, headers:{'Content-Type':'application/json'} };
+    if(body) opts.body = JSON.stringify(body);
+    return await fetch(FB + path, opts);
   }
 
-  function render(){
-    const top = document.getElementById('topref');
-    if(!entrega){
-      el().innerHTML = '<div class="state"><div class="big">📭</div><b>Nenhuma entrega neste link</b><p>A loja ainda não enviou este pedido ou ele já foi removido.</p></div>';
-      top.textContent = 'SEM PEDIDO';
-      return;
-    }
-    top.textContent = 'OS #' + entrega.numero + ' • ' + String(entrega.status||'').toUpperCase();
+  async function tentarLogin(login, senha){
+    const r = await api('/entregadores.json','GET');
+    const dados = await r.json();
+    if(!dados) return { ok:false, erro:'Nenhum entregador cadastrado.' };
+    const lista = Object.entries(dados).map(([id,v])=>({id,...v}));
+    const ent = lista.find(e => e.login && e.login.toLowerCase() === login.toLowerCase());
+    if(!ent) return { ok:false, erro:'Login não encontrado.' };
+    if(!ent.ativo) return { ok:false, erro:'Sua conta está desativada. Contate a loja.' };
+    if(ent.senhaHash !== hashSenha(senha)) return { ok:false, erro:'Senha incorreta.' };
+    return { ok:true, ent };
+  }
 
-    // Retoma o GPS sozinho se a página for reaberta durante a rota
-    if(entrega.status === 'em_rota' && watchId === null) iniciarGPS(true);
+  function salvarSessao(ent){
+    sessao = { id:ent.id, nome:ent.nome, login:ent.login };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessao));
+  }
+  function carregarSessao(){
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e){ return null; }
+  }
+  function limparSessao(){
+    sessao = null; localStorage.removeItem(SESSION_KEY);
+    if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  }
 
-    const st = STATUS[entrega.status] || STATUS.aguardando;
-    const tel = String(entrega.telefone||'').replace(/\D/g,'');
-    const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(entrega.endereco || entrega.cliente || '');
+  async function carregarEntregas(){
+    if(!sessao) return;
+    try{
+      const r = await api('/entregas.json','GET');
+      const dados = await r.json();
+      if(!dados){ entregas=[]; renderLista(); return; }
+      const lista = Object.entries(dados).map(([token,v])=>({token,...v}));
+      entregas = lista.filter(e => e.entregadorId === sessao.id && !['entregue','cancelada'].includes(e.status));
+      renderLista();
+    }catch(e){}
+  }
 
-    let acao = '';
-    if(entrega.status === 'aguardando'){
-      acao = '<button class="btn primary" onclick="aceitar()">✅ Aceitar entrega</button>';
-    } else if(entrega.status === 'aceita'){
-      acao = '<button class="btn blue" onclick="iniciarRota()">🛵 Iniciar rota (liga o GPS)</button>';
-    } else if(entrega.status === 'em_rota'){
-      acao = '<button class="btn gold" onclick="confirmarEntrega()">📦 Confirmar entrega ao cliente</button>';
-    } else if(entrega.status === 'entregue'){
-      acao = '<div class="state" style="padding:10px 0 0"><div class="big">🎉</div><b>Entrega concluída!</b><p>Você pode fechar esta página.</p></div>';
-    } else if(entrega.status === 'cancelada'){
-      acao = '<div class="state" style="padding:10px 0 0"><div class="big">❌</div><b>Entrega cancelada pela loja</b><p>Aguarde novas instruções.</p></div>';
-    }
-
-    el().innerHTML = `
-      <div class="card" style="padding:0;border:0;background:none;box-shadow:none">
-        <span class="pill" style="color:${st.cor};background:${st.bg}"><i></i>${st.txt}</span>
-        <div class="num">OS #${esc(entrega.numero)}</div>
-        <div class="lbl">Cliente</div>
-        <div class="addr">👤 ${esc(entrega.cliente)||'—'}</div>
-        ${entrega.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(entrega.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço cadastrado — combine por telefone.</p>'}
-        ${entrega.observacoes ? '<div class="obs">📝 ' + esc(entrega.observacoes) + '</div>' : ''}
-        <div style="margin-top:14px">
-          <div class="row"><span class="k">Valor a receber</span><span class="v" style="color:var(--green)">R$ ${moeda(entrega.valor)}</span></div>
-          <div class="row"><span class="k">Telefone</span><span class="v">${esc(entrega.telefone)||'—'}</span></div>
+  function renderLogin(erro){
+    document.getElementById('topbar').style.display = 'none';
+    document.getElementById('app').innerHTML = `
+      <div class="login-wrap">
+        <div style="text-align:center;margin-bottom:20px">
+          <div class="mark" style="width:64px;height:64px;font-size:32px;margin:0 auto 14px">🛵</div>
+          <h2 style="font-size:24px;font-weight:800">OS-PREMIUM <span style="color:var(--green)">Entregador</span></h2>
+          <p style="color:var(--mut);font-size:13px;margin-top:6px">Entre com seu login e senha</p>
         </div>
-      </div>
-
-      <div class="actions">
-        ${tel ? '<div class="grid2"><a class="btn" href="tel:' + tel + '">📞 Ligar</a><a class="btn" target="_blank" href="' + maps + '">🗺️ Como chegar</a></div>' : '<a class="btn" target="_blank" href="' + maps + '">🗺️ Como chegar</a>'}
-        ${acao}
-      </div>
-
-      <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox">
-        <div class="dot"></div>
-        <div class="t" id="gpsInfo">
-          <b>${watchId!==null ? 'GPS transmitindo ao vivo' : 'GPS desligado'}</b>
-          ${watchId!==null ? 'A loja e o cliente veem sua posição no mapa.' : 'Ele liga automaticamente ao iniciar a rota.'}
+        <div class="login-card">
+          <label>Login</label>
+          <input id="inpLogin" type="text" placeholder="ex: adriana" autocomplete="username" />
+          <label>Senha</label>
+          <input id="inpSenha" type="password" placeholder="••••" autocomplete="current-password" />
+          ${erro ? '<div class="err">'+esc(erro)+'</div>' : ''}
+          <button class="btn primary" id="btnEntrar">🔐 Entrar</button>
+          <p style="margin-top:16px;font-size:11px;color:var(--mut);text-align:center;line-height:1.6">
+            Seus dados de acesso foram fornecidos pela loja.<br/>Em caso de dúvida, entre em contato.
+          </p>
         </div>
       </div>
     `;
+    document.getElementById('btnEntrar').onclick = async () => {
+      const login = document.getElementById('inpLogin').value.trim();
+      const senha = document.getElementById('inpSenha').value;
+      if(!login || !senha){ toast('Preencha login e senha', true); return; }
+      const res = await tentarLogin(login, senha);
+      if(res.ok){
+        salvarSessao(res.ent);
+        toast('✅ Bem-vindo, '+res.ent.nome+'!');
+        renderApp();
+        carregarEntregas();
+        setInterval(carregarEntregas, 5000);
+      } else {
+        renderLogin(res.erro);
+      }
+    };
+    document.getElementById('inpSenha').addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('btnEntrar').click(); });
   }
 
-  async function patch(body){
-    const r = await fetch(FB + '/entregas/' + encodeURIComponent(token) + '.json', {
-      method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  function renderApp(){
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('topref').textContent = sessao.nome + ' • ' + sessao.login;
+    renderLista();
+  }
+
+  function renderLista(){
+    const app = document.getElementById('app');
+    if(entregas.length === 0){
+      app.innerHTML = `
+        <div class="wrap">
+          <div class="card">
+            <div class="state">
+              <div class="big">📭</div>
+              <b>Olá, ${esc(sessao.nome)}!</b>
+              <p>Você não tem entregas ativas no momento.<br/>Novas entregas aparecerão aqui automaticamente.</p>
+            </div>
+          </div>
+          <button class="btn red logout" id="btnSair">🚪 Sair da conta</button>
+        </div>
+      `;
+    } else {
+      app.innerHTML = `
+        <div class="wrap" id="listaEntregas"></div>
+        <button class="btn red logout" id="btnSair" style="max-width:560px;margin:0 auto">🚪 Sair da conta</button>
+      `;
+      const lista = document.getElementById('listaEntregas');
+      entregas.forEach(e => lista.appendChild(criarCardEntrega(e)));
+    }
+    document.getElementById('btnSair').onclick = () => {
+      if(confirm('Deseja sair da sua conta?')){
+        limparSessao();
+        renderLogin();
+      }
+    };
+  }
+
+  function criarCardEntrega(e){
+    const st = STATUS[e.status] || STATUS.aguardando;
+    const tel = String(e.telefone||'').replace(/\D/g,'');
+    const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(e.endereco || e.cliente || '');
+    const div = document.createElement('div');
+    div.className = 'entrega-item';
+    let acao = '';
+    if(e.status === 'aguardando') acao = '<button class="btn primary" data-acao="aceitar">✅ Aceitar entrega</button>';
+    else if(e.status === 'aceita') acao = '<button class="btn blue" data-acao="rota">🛵 Iniciar rota (liga o GPS)</button>';
+    else if(e.status === 'em_rota') acao = '<button class="btn gold" data-acao="entregar">📦 Confirmar entrega ao cliente</button>';
+
+    div.innerHTML = `
+      <div class="head">
+        <span class="pill" style="color:${st.cor};background:${st.bg}"><i></i>${st.txt}</span>
+        <span style="font:800 18px/1 var(--mono)">OS #${esc(e.numero)}</span>
+      </div>
+      <div class="lbl">Cliente</div>
+      <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
+      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
+      <div style="margin-top:14px">
+        <div class="row"><span class="k">Valor a receber</span><span class="v" style="color:var(--green)">R$ ${moeda(e.valor)}</span></div>
+        <div class="row"><span class="k">Telefone</span><span class="v">${esc(e.telefone)||'—'}</span></div>
+      </div>
+      <div class="actions" style="margin-top:14px">
+        ${tel ? '<div class="grid2"><a class="btn" href="tel:'+tel+'">📞 Ligar</a><a class="btn" target="_blank" href="'+maps+'">🗺️ Como chegar</a></div>' : '<a class="btn" target="_blank" href="'+maps+'">🗺️ Como chegar</a>'}
+        ${acao}
+      </div>
+      <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox-${e.token}">
+        <div class="dot"></div>
+        <div class="t" id="gpsInfo-${e.token}">
+          <b>${watchId!==null ? 'GPS transmitindo ao vivo' : 'GPS desligado'}</b>
+          ${watchId!==null ? 'A loja e o cliente veem sua posição.' : 'Ele liga ao iniciar a rota.'}
+        </div>
+      </div>
+    `;
+    div.querySelectorAll('[data-acao]').forEach(btn => {
+      btn.onclick = () => executarAcao(e, btn.dataset.acao);
     });
-    return r.ok;
+    return div;
   }
 
-  async function aceitar(){
-    toast('✅ Entrega aceita!');
-    await patch({ status:'aceita', aceitaEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() });
-  }
-
-  async function iniciarRota(){
-    if(!('geolocation' in navigator)){ toast('❌ Este aparelho não tem GPS', true); return; }
-    iniciarGPS(false);
-    toast('🛵 Rota iniciada! GPS ligado.');
-    await patch({ status:'em_rota', rotaIniciadaEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() });
-  }
-
-  async function confirmarEntrega(){
-    if(!confirm('Confirmar que o cliente recebeu o pedido?')) return;
-    pararGPS();
-    toast('📦 Entrega confirmada!');
-    await patch({ status:'entregue', entregueEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() });
+  async function executarAcao(e, acao){
+    if(acao === 'aceitar'){
+      toast('✅ Entrega aceita!');
+      await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+    } else if(acao === 'rota'){
+      if(!('geolocation' in navigator)){ toast('❌ Este aparelho não tem GPS', true); return; }
+      iniciarGPS(false);
+      toast('🛵 Rota iniciada! GPS ligado.');
+      await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'em_rota',rotaIniciadaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+    } else if(acao === 'entregar'){
+      if(!confirm('Confirmar que o cliente recebeu o pedido?')) return;
+      pararGPS();
+      toast('📦 Entrega confirmada!');
+      await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+    }
+    setTimeout(carregarEntregas, 1000);
   }
 
   function iniciarGPS(silencioso){
@@ -232,18 +310,15 @@
       const agora = Date.now();
       if(agora - ultimoEnvioGPS < 5000) return;
       ultimoEnvioGPS = agora;
-      fetch(FB + '/posicoes/' + encodeURIComponent(token) + '.json', {
-        method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ lat:latitude, lng:longitude, precisao:Math.round(accuracy||0), velocidade:Math.round((speed||0)*3.6), timestamp:new Date().toISOString() })
-      }).catch(()=>{});
+      entregas.forEach(e => {
+        if(e.status === 'em_rota'){
+          api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
+        }
+      });
       const badge = document.getElementById('gpsBadge');
       const txt = document.getElementById('gpsTxt');
       if(badge) badge.className = 'gps on';
       if(txt) txt.textContent = 'GPS ON';
-      const box = document.getElementById('gpsBox');
-      if(box) box.className = 'gpsbox';
-      const info = document.getElementById('gpsInfo');
-      if(info) info.innerHTML = '<b>GPS transmitindo ao vivo</b>Precisão: ' + Math.round(accuracy||0) + ' m • ' + new Date().toLocaleTimeString('pt-BR');
     }, err => {
       if(!silencioso) toast('❌ GPS negado: ' + err.message, true);
       const txt = document.getElementById('gpsTxt');
@@ -255,8 +330,17 @@
     if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
   }
 
-  carregar();
-  setInterval(carregar, 5000);
+  (function init(){
+    const s = carregarSessao();
+    if(s){
+      sessao = s;
+      renderApp();
+      carregarEntregas();
+      setInterval(carregarEntregas, 5000);
+    } else {
+      renderLogin();
+    }
+  })();
 </script>
 </body>
 </html>
