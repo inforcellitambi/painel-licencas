@@ -70,7 +70,7 @@
   .login-card .err{margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center}
   .entrega-item{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
   .entrega-item .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:260px;background:#0E1A24;position:relative}
+  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:280px;background:#0E1A24;position:relative}
   .mapa-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.95);color:var(--mut);font-size:13px;z-index:5;flex-direction:column;gap:8px}
   .mapa-loading .spinner{width:32px;height:32px;border:3px solid rgba(0,230,118,.2);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -122,10 +122,10 @@
   let entregas = [];
   let watchId = null;
   let ultimoEnvioGPS = 0;
+  let ultimaRotaCalculada = 0;
   let posicaoAtual = null;
   const mapas = {};
   const cacheGeo = {};
-  const cardsCriados = new Set();
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -146,7 +146,7 @@
 
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:'👍 Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    aceita:     { txt:' Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
     em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
@@ -197,12 +197,10 @@
       const lista = Object.entries(dados).map(([token,v])=>({token,...v}));
       const novasEntregas = lista.filter(e => e.entregadorId === sessao.id && !['entregue','cancelada'].includes(e.status));
       
-      // Só re-renderiza se mudou
       if(JSON.stringify(novasEntregas.map(e=>e.token)) !== JSON.stringify(entregas.map(e=>e.token))){
         entregas = novasEntregas;
         renderLista();
       } else {
-        // Só atualiza status
         atualizarStatusCards();
       }
     }catch(e){}
@@ -253,7 +251,6 @@
 
   function renderLista(){
     const app = document.getElementById('app');
-    cardsCriados.clear();
 
     if(entregas.length === 0){
       app.innerHTML = `
@@ -265,10 +262,9 @@
               <p>Você não tem entregas ativas no momento.<br/>Novas entregas aparecerão aqui automaticamente.</p>
             </div>
           </div>
-          <button class="btn red logout" id="btnSair">🚪 Sair da conta</button>
+          <button class="btn red logout" id="btnSair"> Sair da conta</button>
         </div>
       `;
-      // Limpa mapas
       Object.values(mapas).forEach(m => { if(m.mapa) m.mapa.remove(); });
       for(let k in mapas) delete mapas[k];
     } else {
@@ -280,9 +276,7 @@
       entregas.forEach(e => {
         const card = criarCardEntrega(e);
         lista.appendChild(card);
-        cardsCriados.add(e.token);
       });
-      // Inicializa mapas após DOM pronto
       setTimeout(() => {
         entregas.forEach(e => inicializarMapa(e));
       }, 300);
@@ -304,7 +298,6 @@
         pill.style.background = st.bg;
         pill.innerHTML = `<i></i>${st.txt}`;
       }
-      // Atualiza botão de ação
       const btnAcao = document.getElementById('btn-acao-'+e.token);
       if(btnAcao){
         if(e.status === 'aguardando'){
@@ -317,7 +310,7 @@
           btnAcao.dataset.acao = 'rota';
         } else if(e.status === 'em_rota'){
           btnAcao.className = 'btn gold';
-          btnAcao.innerHTML = '📦 Confirmar entrega';
+          btnAcao.innerHTML = ' Confirmar entrega';
           btnAcao.dataset.acao = 'entregar';
         }
         btnAcao.onclick = () => executarAcao(e, btnAcao.dataset.acao);
@@ -325,6 +318,7 @@
     });
   }
 
+  // 🗺️ INICIALIZA O MAPA COM TUDO VISÍVEL
   function inicializarMapa(e){
     const container = document.getElementById('mapa-'+e.token);
     if(!container || mapas[e.token]) return;
@@ -348,16 +342,19 @@
       rotaCalculada: false
     };
 
+    // Se já tem GPS, mostra o pino 🛵
     if(posicaoAtual) atualizarPosicaoNoMapa(e, posicaoAtual);
 
+    // Geocodifica o destino e mostra 📍 + rota
     if(e.endereco){
       geocodificarEndereco(e.endereco).then(coords => {
         if(coords){
           mapas[e.token].coordsDestino = coords;
           adicionarDestinoNoMapa(e, coords);
-          if(posicaoAtual && !mapas[e.token].rotaCalculada){
-            traçarRota(e, posicaoAtual, coords);
-          }
+          
+          // Traça a rota: do GPS atual (ou posição padrão) até o destino
+          const origem = posicaoAtual || { lat: -23.5505, lng: -46.6333 }; // São Paulo como fallback
+          traçarRota(e, origem, coords);
         }
         const loading = document.getElementById('mapa-loading-'+e.token);
         if(loading) loading.style.display = 'none';
@@ -385,9 +382,14 @@
     return null;
   }
 
+  // 🛣️ Traça a rota (chamado ao iniciar e a cada 30s quando GPS ativo)
   async function traçarRota(e, origem, destino){
     const m = mapas[e.token];
-    if(!m || m.rotaCalculada) return;
+    if(!m) return;
+
+    const agora = Date.now();
+    if(m.rotaCalculada && (agora - ultimaRotaCalculada) < 30000) return; // Recalcula a cada 30s no máximo
+    ultimaRotaCalculada = agora;
     m.rotaCalculada = true;
 
     const controller = new AbortController();
@@ -461,8 +463,7 @@
       className: '', iconSize: [32, 32], iconAnchor: [16, 32]
     });
     m.marcadorDestino = L.marker([coords.lat, coords.lng], { icon: iconeDestino }).addTo(m.mapa)
-      .bindPopup(`<b> Destino</b><br/><b>${esc(e.cliente)}</b><br/>${esc(e.endereco)}`);
-    if(!posicaoAtual) m.mapa.setView([coords.lat, coords.lng], 15);
+      .bindPopup(`<b>📍 Destino</b><br/><b>${esc(e.cliente)}</b><br/>${esc(e.endereco)}`);
   }
 
   function atualizarPosicaoNoMapa(e, pos){
@@ -514,13 +515,13 @@
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
-      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.endereco ? '<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> ' + esc(e.endereco) + '</div>' : '<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes ? '<div class="obs">📝 ' + esc(e.observacoes) + '</div>' : ''}
       <div class="mapa-box" id="mapa-${e.token}">
         <div class="mapa-loading" id="mapa-loading-${e.token}">
           <div class="spinner"></div>
-          <div>Carregando mapa...</div>
+          <div>Carregando mapa e rota...</div>
         </div>
       </div>
       <div class="info-rota" id="info-rota-${e.token}">
@@ -565,24 +566,34 @@
     setTimeout(carregarEntregas, 1000);
   }
 
+  // ️ GPS: atualiza pino e recalcula rota a cada 30s
   function iniciarGPS(silencioso){
     if(watchId !== null) return;
     watchId = navigator.geolocation.watchPosition(pos => {
       const { latitude, longitude, accuracy, speed } = pos.coords;
       posicaoAtual = { lat: latitude, lng: longitude };
       const agora = Date.now();
-      if(agora - ultimoEnvioGPS < 5000) return;
-      ultimoEnvioGPS = agora;
-      entregas.forEach(e => {
-        if(e.status === 'em_rota'){
-          api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
-          atualizarPosicaoNoMapa(e, posicaoAtual);
-          const m = mapas[e.token];
-          if(m && m.coordsDestino && !m.rotaCalculada){
-            traçarRota(e, posicaoAtual, m.coordsDestino);
+      
+      // Envia posição a cada 5s
+      if(agora - ultimoEnvioGPS >= 5000){
+        ultimoEnvioGPS = agora;
+        entregas.forEach(e => {
+          if(e.status === 'em_rota'){
+            api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
           }
+        });
+      }
+      
+      // Atualiza pino no mapa
+      entregas.forEach(e => {
+        atualizarPosicaoNoMapa(e, posicaoAtual);
+        // Recalcula rota a cada 30s
+        const m = mapas[e.token];
+        if(m && m.coordsDestino && (agora - ultimaRotaCalculada) >= 30000){
+          traçarRota(e, posicaoAtual, m.coordsDestino);
         }
       });
+      
       const badge = document.getElementById('gpsBadge');
       const txt = document.getElementById('gpsTxt');
       if(badge) badge.className = 'gps on';
