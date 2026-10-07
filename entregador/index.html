@@ -39,8 +39,10 @@
   .btn.red{background:linear-gradient(135deg,#EF4444,#DC2626);border-color:transparent;color:#fff}
   .btn.nav{background:linear-gradient(135deg,#8B5CF6,#7C3AED);border-color:transparent;color:#fff}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:240px;background:#0E1A24;position:relative}
-  .mapa-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.95);color:var(--mut);font-size:13px;z-index:5}
+  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:260px;background:#0E1A24;position:relative}
+  .mapa-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.95);color:var(--mut);font-size:13px;z-index:5;flex-direction:column;gap:8px}
+  .mapa-loading .spinner{width:32px;height:32px;border:3px solid rgba(0,230,118,.2);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .gpsbox{margin-top:10px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25)}
   .gpsbox .dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:live 1.6s infinite}
   .gpsbox.off{background:rgba(255,255,255,.03);border-color:var(--line)}
@@ -115,8 +117,8 @@
   const toast = (msg, err) => { const t=document.getElementById('toast'); t.textContent=msg; t.className=err?'show err':'show'; setTimeout(()=>t.className='',3000); };
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:'👍 Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
-    em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
+    aceita:     { txt:' Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    em_rota:    { txt:' Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
   };
@@ -216,19 +218,52 @@
   function inicializarMapa(e){
     const container=document.getElementById('mapa-'+e.token);
     if(!container||mapas[e.token])return;
+    
+    console.log('🗺️ Inicializando mapa para:', e.token);
+    
     const mapa=L.map(container,{zoomControl:false,attributionControl:false,preferCanvas:true}).setView([-23.55,-46.63],13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17}).addTo(mapa);
+    
     mapas[e.token]={mapa,marcadorMoto:null,marcadorDestino:null,coordsDestino:null};
-    if(posicaoAtual)atualizarPosicaoNoMapa(e,posicaoAtual);
+    
+    // Se já tem GPS, mostra imediatamente
+    if(posicaoAtual){
+      console.log('✅ GPS já disponível, mostrando posição inicial');
+      atualizarPosicaoNoMapa(e,posicaoAtual);
+      mapa.setView([posicaoAtual.lat,posicaoAtual.lng],15);
+    }
+    
+    // Geocodifica o destino
     if(e.endereco){
+      console.log('📍 Geocodificando endereço:', e.endereco);
       geocodificarEndereco(e.endereco).then(coords=>{
-        if(coords){mapas[e.token].coordsDestino=coords;adicionarDestinoNoMapa(e,coords);}
-        const loading=document.getElementById('mapa-loading-'+e.token); if(loading)loading.style.display='none';
+        if(coords){
+          console.log('✅ Endereço geocodificado:', coords);
+          mapas[e.token].coordsDestino=coords;
+          adicionarDestinoNoMapa(e,coords);
+          // Se não tem GPS, centraliza no destino
+          if(!posicaoAtual) mapa.setView([coords.lat,coords.lng],15);
+        } else {
+          console.warn('⚠️ Endereço não encontrado');
+        }
+        const loading=document.getElementById('mapa-loading-'+e.token);
+        if(loading) loading.style.display='none';
+      }).catch(err=>{
+        console.error(' Erro ao geocodificar:', err);
+        const loading=document.getElementById('mapa-loading-'+e.token);
+        if(loading) loading.innerHTML='❌ Erro ao carregar mapa';
       });
     } else {
-      const loading=document.getElementById('mapa-loading-'+e.token); if(loading)loading.innerHTML='📍 Sem endereço';
+      console.log('️ Sem endereço');
+      const loading=document.getElementById('mapa-loading-'+e.token);
+      if(loading) loading.innerHTML='📍 Sem endereço';
     }
-    setTimeout(()=>mapa.invalidateSize(),400);
+    
+    // Força o Leaflet a recalcular o tamanho
+    setTimeout(()=>{
+      mapa.invalidateSize();
+      console.log('🔄 Mapa redimensionado');
+    }, 500);
   }
 
   async function geocodificarEndereco(endereco){
@@ -238,21 +273,24 @@
       const r=await fetch(url,{headers:{'User-Agent':'OS-Premium-Entregador/1.0'}});
       const d=await r.json();
       if(d&&d.length>0){const c={lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};cacheGeo[endereco]=c;return c;}
-    }catch(e){}
+    }catch(e){console.error('Erro geocoding:',e);}
     return null;
   }
 
   function adicionarDestinoNoMapa(e,coords){
     const m=mapas[e.token]; if(!m)return;
     m.marcadorDestino=L.marker([coords.lat,coords.lng],{icon:L.divIcon({html:'<div style="font-size:30px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(m.mapa).bindPopup(`<b>📍 Destino</b><br/>${esc(e.cliente)}<br/>${esc(e.endereco)}`);
-    if(!posicaoAtual)m.mapa.setView([coords.lat,coords.lng],15);
   }
 
   function atualizarPosicaoNoMapa(e,pos){
     const m=mapas[e.token]; if(!m)return;
-    const iconeMoto=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
-    if(!m.marcadorMoto){m.marcadorMoto=L.marker([pos.lat,pos.lng],{icon:iconeMoto}).addTo(m.mapa).bindPopup('<b>🛵 Você está aqui</b>');}
-    else m.marcadorMoto.setLatLng([pos.lat,pos.lng]);
+    const iconeMoto=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
+    if(!m.marcadorMoto){
+      m.marcadorMoto=L.marker([pos.lat,pos.lng],{icon:iconeMoto}).addTo(m.mapa).bindPopup('<b>🛵 Você está aqui</b>');
+      console.log(' Pino do entregador adicionado');
+    } else {
+      m.marcadorMoto.setLatLng([pos.lat,pos.lng]);
+    }
   }
 
   function criarCardEntrega(e){
@@ -272,10 +310,10 @@
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
-      ${e.endereco?'<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 '+esc(e.endereco)+'</div>':'<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.endereco?'<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> '+esc(e.endereco)+'</div>':'<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes?'<div style="margin-top:10px;padding:12px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.35);border-radius:12px;font-size:13px;color:#EBD9B4">📝 '+esc(e.observacoes)+'</div>':''}
-      <div class="mapa-box" id="mapa-${e.token}"><div class="mapa-loading" id="mapa-loading-${e.token}">️ Carregando mapa...</div></div>
+      <div class="mapa-box" id="mapa-${e.token}"><div class="mapa-loading" id="mapa-loading-${e.token}"><div class="spinner"></div><div>Carregando mapa...</div></div></div>
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px"><span style="color:var(--mut)">Valor a receber</span><span style="font-weight:600;color:var(--green)">R$ ${(parseFloat(e.valor)||0).toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px"><span style="color:var(--mut)">Telefone</span><span style="font-weight:600">${esc(e.telefone)||'—'}</span></div>
@@ -294,17 +332,17 @@
   }
 
   function abrirModalNavegacao(e){
-    if(!e.endereco){toast(' Sem endereço para navegar',true);return;}
+    if(!e.endereco){toast('❌ Sem endereço para navegar',true);return;}
     const enderecoEncoded=encodeURIComponent(e.endereco);
     const app=document.getElementById('app');
     const modal=document.createElement('div');
     modal.className='modal-overlay';
     modal.innerHTML=`
       <div class="modal">
-        <h3>️ Escolha o app de navegação</h3>
+        <h3>🗺️ Escolha o app de navegação</h3>
         <p style="margin-bottom:16px;color:var(--mut);font-size:13px">${esc(e.endereco)}</p>
-        <button class="btn" id="btnWaze" style="background:#33CCFF;color:#000;font-weight:800"> Waze</button>
-        <button class="btn" id="btnGoogle" style="background:#4285F4;color:#fff;font-weight:800">🗺️ Google Maps</button>
+        <button class="btn" id="btnWaze" style="background:#33CCFF;color:#000;font-weight:800">🚗 Waze</button>
+        <button class="btn" id="btnGoogle" style="background:#4285F4;color:#fff;font-weight:800">️ Google Maps</button>
         <button class="btn" id="btnFechar" style="margin-top:10px">Cancelar</button>
       </div>`;
     app.appendChild(modal);
@@ -315,7 +353,7 @@
   }
 
   async function executarAcao(e,acao){
-    console.log('👉 Ação:',acao,'Token:',e.token);
+    console.log(' Ação:',acao,'Token:',e.token);
     if(acao==='aceitar'){
       toast('✅ Entrega aceita!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
@@ -331,24 +369,32 @@
     } else if(acao==='entregar'){
       if(!confirm('Confirmar entrega?'))return;
       pararGPS();
-      toast('📦 Entrega confirmada!');
+      toast(' Entrega confirmada!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     }
     setTimeout(carregarEntregas,1000);
   }
 
   function iniciarGPS(){
-    if(watchId!==null){console.log('️ GPS já ativo');return;}
+    if(watchId!==null){console.log('⚠️ GPS já ativo');return;}
     console.log('📡 Chamando watchPosition...');
     watchId=navigator.geolocation.watchPosition(
       pos=>{
         console.log('✅ GPS recebido:',pos.coords.latitude,pos.coords.longitude);
         const {latitude,longitude,accuracy,speed}=pos.coords;
         posicaoAtual={lat:latitude,lng:longitude};
+        
+        // Atualiza TODOS os mapas com a nova posição
         entregas.forEach(e=>{
           if(e.status==='em_rota'){
             api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
             atualizarPosicaoNoMapa(e,posicaoAtual);
+            // Centraliza o mapa na posição do entregador
+            const m=mapas[e.token];
+            if(m && m.mapa){
+              m.mapa.setView([latitude,longitude],16);
+              console.log('🗺️ Mapa centralizado na posição do entregador');
+            }
           }
         });
       },
