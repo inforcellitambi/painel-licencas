@@ -10,7 +10,6 @@
 <title>Entregador — OS-PREMIUM</title>
 
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300E676'/><path d='M20 62 L32 62 L40 44 L60 44 L68 62 L82 62' stroke='%23070B0F' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='33' cy='67' r='8' fill='%23070B0F'/><circle cx='67' cy='67' r='8' fill='%23070B0F'/><rect x='44' y='30' width='12' height='12' rx='3' fill='%23070B0F'/></svg>" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
   :root{ --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07); --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6; --r:20px; --mono:ui-monospace,monospace; }
@@ -21,10 +20,11 @@
   .brand{display:flex;align-items:center;gap:10px}
   .brand b{font-size:14px}
   .brand .sub{font:700 10px/1 var(--mono);color:var(--mut)}
-  .gps{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--mut)}
-  .gps.on{color:var(--green)}
-  .gps i{width:7px;height:7px;border-radius:50%;background:currentColor}
-  .gps.on i{box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite}
+  .gps-status{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  .gps-status.on{color:var(--green);background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.3)}
+  .gps-status.off{color:var(--mut)}
+  .gps-status i{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .gps-status.on i{box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite}
   @keyframes live{0%{box-shadow:0 0 0 0 rgba(0,230,118,.55)}70%{box-shadow:0 0 0 8px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
   .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:800}
@@ -38,17 +38,11 @@
   .btn.gold{background:linear-gradient(135deg,#F59E0B,#D97706);border-color:transparent;color:#000}
   .btn.red{background:linear-gradient(135deg,#EF4444,#DC2626);border-color:transparent;color:#fff}
   .btn.nav{background:linear-gradient(135deg,#8B5CF6,#7C3AED);border-color:transparent;color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .mapa-box{margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);height:260px;background:#0E1A24;position:relative}
-  .mapa-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.95);color:var(--mut);font-size:13px;z-index:5;flex-direction:column;gap:8px}
-  .mapa-loading .spinner{width:32px;height:32px;border:3px solid rgba(0,230,118,.2);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .gpsbox{margin-top:10px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25)}
-  .gpsbox .dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:live 1.6s infinite}
-  .gpsbox.off{background:rgba(255,255,255,.03);border-color:var(--line)}
-  .gpsbox.off .dot{background:var(--mut);animation:none}
-  .gpsbox .t{font-size:12px;color:var(--mut)}
-  .gpsbox .t b{color:var(--txt);display:block;font-size:13px}
+  .gps-info{margin-top:10px;padding:12px;border-radius:12px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25);font-size:12px;color:var(--mut)}
+  .gps-info b{color:var(--txt);display:block;font-size:13px;margin-bottom:4px}
+  .gps-info.error{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25);color:#FCA5A5}
   .state{text-align:center;padding:34px 12px}
   .state .big{font-size:46px;margin-bottom:12px}
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s ease;max-width:90vw;text-align:center}
@@ -92,13 +86,15 @@
       <b>OS-PREMIUM <span>Entregador</span></b>
     </div>
   </div>
-  <span class="gps" id="gpsBadge"><i></i><span id="gpsTxt">GPS OFF</span></span>
+  <div class="gps-status off" id="gpsBadge">
+    <i></i>
+    <span id="gpsTxt">GPS OFF</span>
+  </div>
 </div>
 
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
   const SESSION_KEY = 'os_entregador_sessao';
@@ -107,8 +103,7 @@
   let entregas = [];
   let watchId = null;
   let posicaoAtual = null;
-  const mapas = {};
-  const cacheGeo = {};
+  let gpsAtivo = false;
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width:100%;height:100%"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E676"/><stop offset="100%" stop-color="#00B25A"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg2)"/><path d="M20 62 L32 62 L40 44 L60 44 L68 62 L82 62" stroke="#070B0F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="33" cy="67" r="8" fill="#070B0F"/><circle cx="67" cy="67" r="8" fill="#070B0F"/><rect x="45" y="32" width="10" height="12" rx="3" fill="#070B0F"/><circle cx="50" cy="38" r="2" fill="#00E676"/></svg>`;
@@ -117,8 +112,8 @@
   const toast = (msg, err) => { const t=document.getElementById('toast'); t.textContent=msg; t.className=err?'show err':'show'; setTimeout(()=>t.className='',3000); };
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:' Aceita — GPS ativo', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
-    em_rota:    { txt:' Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
+    aceita:     { txt:'👍 Aceita — GPS ativo', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    em_rota:    { txt:'🛵 Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
   };
@@ -143,7 +138,7 @@
 
   function salvarSessao(ent){ sessao={id:ent.id,nome:ent.nome,login:ent.login}; localStorage.setItem(SESSION_KEY,JSON.stringify(sessao)); }
   function carregarSessao(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;} }
-  function limparSessao(){ sessao=null; localStorage.removeItem(SESSION_KEY); if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;} }
+  function limparSessao(){ sessao=null; localStorage.removeItem(SESSION_KEY); pararGPS(); }
 
   async function carregarEntregas(){
     if(!sessao) return;
@@ -171,7 +166,7 @@
           <label>Senha</label>
           <input id="inpSenha" type="password" placeholder="••••" />
           ${erro?'<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center">'+esc(erro)+'</div>':''}
-          <button class="btn primary" id="btnEntrar" style="margin-top:22px">🔐 Entrar</button>
+          <button class="btn primary" id="btnEntrar" style="margin-top:22px"> Entrar</button>
         </div>
       </div>`;
     document.getElementById('btnEntrar').onclick=async()=>{
@@ -191,12 +186,10 @@
     const app=document.getElementById('app');
     if(entregas.length===0){
       app.innerHTML=`<div class="wrap"><div class="card"><div class="state"><div class="logo-grande" style="width:80px;height:80px;margin:0 auto 14px">${LOGO_SVG}</div><b>Olá, ${esc(sessao.nome)}!</b><p style="margin-top:8px;color:var(--mut)">Você não tem entregas ativas no momento.</p></div></div><button class="btn red" id="btnSair">🚪 Sair da conta</button></div>`;
-      Object.values(mapas).forEach(m=>{if(m.mapa)m.mapa.remove();}); for(let k in mapas)delete mapas[k];
     } else {
       app.innerHTML=`<div class="wrap" id="listaEntregas"></div><button class="btn red" id="btnSair" style="max-width:560px;margin:0 auto">🚪 Sair da conta</button>`;
       const lista=document.getElementById('listaEntregas');
       entregas.forEach(e=>lista.appendChild(criarCardEntrega(e)));
-      setTimeout(()=>entregas.forEach(e=>inicializarMapa(e)),300);
     }
     document.getElementById('btnSair').onclick=()=>{if(confirm('Deseja sair?')){limparSessao();renderLogin();}};
   }
@@ -212,85 +205,18 @@
         else if(e.status==='aceita'){novo.className='btn blue';novo.innerHTML='🛵 Iniciar rota';novo.onclick=()=>executarAcao(e,'rota');}
         else if(e.status==='em_rota'){novo.className='btn gold';novo.innerHTML='📦 Confirmar entrega';novo.onclick=()=>executarAcao(e,'entregar');}
       }
-    });
-  }
-
-  function inicializarMapa(e){
-    const container=document.getElementById('mapa-'+e.token);
-    if(!container||mapas[e.token])return;
-    
-    console.log('🗺️ Inicializando mapa para:', e.token);
-    
-    const mapa=L.map(container,{zoomControl:false,attributionControl:false,preferCanvas:true}).setView([-23.55,-46.63],13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17}).addTo(mapa);
-    
-    mapas[e.token]={mapa,marcadorMoto:null,marcadorDestino:null,coordsDestino:null};
-    
-    // Se já tem GPS, mostra imediatamente
-    if(posicaoAtual){
-      console.log('✅ GPS já disponível, mostrando posição inicial');
-      atualizarPosicaoNoMapa(e,posicaoAtual);
-      mapa.setView([posicaoAtual.lat,posicaoAtual.lng],15);
-    }
-    
-    // Geocodifica o destino
-    if(e.endereco){
-      console.log(' Geocodificando endereço:', e.endereco);
-      geocodificarEndereco(e.endereco).then(coords=>{
-        if(coords){
-          console.log('✅ Endereço geocodificado:', coords);
-          mapas[e.token].coordsDestino=coords;
-          adicionarDestinoNoMapa(e,coords);
-          // Se não tem GPS, centraliza no destino
-          if(!posicaoAtual) mapa.setView([coords.lat,coords.lng],15);
+      // Atualiza info do GPS
+      const gpsInfo=document.getElementById('gps-info-'+e.token);
+      if(gpsInfo){
+        if(gpsAtivo && posicaoAtual){
+          gpsInfo.className='gps-info';
+          gpsInfo.innerHTML=`<b>🛰️ GPS ativo</b>Transmitindo posição: ${posicaoAtual.lat.toFixed(5)}, ${posicaoAtual.lng.toFixed(5)}`;
         } else {
-          console.warn('⚠️ Endereço não encontrado');
+          gpsInfo.className='gps-info error';
+          gpsInfo.innerHTML=`<b>⚠️ GPS inativo</b>Aguardando ativação...`;
         }
-        const loading=document.getElementById('mapa-loading-'+e.token);
-        if(loading) loading.style.display='none';
-      }).catch(err=>{
-        console.error('❌ Erro ao geocodificar:', err);
-        const loading=document.getElementById('mapa-loading-'+e.token);
-        if(loading) loading.innerHTML='❌ Erro ao carregar mapa';
-      });
-    } else {
-      console.log('⚠️ Sem endereço');
-      const loading=document.getElementById('mapa-loading-'+e.token);
-      if(loading) loading.innerHTML='📍 Sem endereço';
-    }
-    
-    // Força o Leaflet a recalcular o tamanho
-    setTimeout(()=>{
-      mapa.invalidateSize();
-      console.log('🔄 Mapa redimensionado');
-    }, 500);
-  }
-
-  async function geocodificarEndereco(endereco){
-    if(cacheGeo[endereco])return cacheGeo[endereco];
-    try{
-      const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1&countrycodes=br`;
-      const r=await fetch(url,{headers:{'User-Agent':'OS-Premium-Entregador/1.0'}});
-      const d=await r.json();
-      if(d&&d.length>0){const c={lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};cacheGeo[endereco]=c;return c;}
-    }catch(e){console.error('Erro geocoding:',e);}
-    return null;
-  }
-
-  function adicionarDestinoNoMapa(e,coords){
-    const m=mapas[e.token]; if(!m)return;
-    m.marcadorDestino=L.marker([coords.lat,coords.lng],{icon:L.divIcon({html:'<div style="font-size:30px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(m.mapa).bindPopup(`<b> Destino</b><br/>${esc(e.cliente)}<br/>${esc(e.endereco)}`);
-  }
-
-  function atualizarPosicaoNoMapa(e,pos){
-    const m=mapas[e.token]; if(!m)return;
-    const iconeMoto=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
-    if(!m.marcadorMoto){
-      m.marcadorMoto=L.marker([pos.lat,pos.lng],{icon:iconeMoto}).addTo(m.mapa).bindPopup('<b>🛵 Você está aqui</b>');
-      console.log('🛵 Pino do entregador adicionado');
-    } else {
-      m.marcadorMoto.setLatLng([pos.lat,pos.lng]);
-    }
+      }
+    });
   }
 
   function criarCardEntrega(e){
@@ -313,18 +239,16 @@
       ${e.endereco?'<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 '+esc(e.endereco)+'</div>':'<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes?'<div style="margin-top:10px;padding:12px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.35);border-radius:12px;font-size:13px;color:#EBD9B4">📝 '+esc(e.observacoes)+'</div>':''}
-      <div class="mapa-box" id="mapa-${e.token}"><div class="mapa-loading" id="mapa-loading-${e.token}"><div class="spinner"></div><div>Carregando mapa...</div></div></div>
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px"><span style="color:var(--mut)">Valor a receber</span><span style="font-weight:600;color:var(--green)">R$ ${(parseFloat(e.valor)||0).toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px"><span style="color:var(--mut)">Telefone</span><span style="font-weight:600">${esc(e.telefone)||'—'}</span></div>
       </div>
-      <div style="margin-top:14px;display:grid;gap:10px">
-        ${tel?'<div class="grid2"><a class="btn" href="tel:'+tel+'" style="min-height:44px;font-size:13px">📞 Ligar</a><button class="btn nav" id="btn-navegar-'+e.token+'" style="min-height:44px;font-size:13px">🗺️ Navegar</button></div>':'<button class="btn nav" id="btn-navegar-'+e.token+'">🗺️ Navegar</button>'}
-        ${acaoHtml}
+      <div class="gps-info" id="gps-info-${e.token}">
+        <b>⚠️ GPS inativo</b>Aguardando ativação...
       </div>
-      <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox-${e.token}">
-        <div class="dot"></div>
-        <div class="t" id="gpsInfo-${e.token}"><b>${watchId!==null?'GPS transmitindo ao vivo':'GPS desligado'}</b>${watchId!==null?'A loja vê sua posição no mapa.':'Ele liga ao aceitar a entrega.'}</div>
+      <div style="margin-top:14px;display:grid;gap:10px">
+        ${tel?'<div class="grid2"><a class="btn" href="tel:'+tel+'" style="min-height:44px;font-size:13px">📞 Ligar</a><button class="btn nav" id="btn-navegar-'+e.token+'" style="min-height:44px;font-size:13px">️ Navegar</button></div>':'<button class="btn nav" id="btn-navegar-'+e.token+'">🗺️ Navegar</button>'}
+        ${acaoHtml}
       </div>`;
     const btnNavegar=div.querySelector('#btn-navegar-'+e.token);
     if(btnNavegar)btnNavegar.onclick=()=>abrirModalNavegacao(e);
@@ -356,16 +280,10 @@
     console.log('👉 Ação:',acao,'Token:',e.token);
     if(acao==='aceitar'){
       toast('✅ Entrega aceita! Ativando GPS...');
-      // ATIVA O GPS AUTOMATICAMENTE AO ACEITAR
-      if(!('geolocation' in navigator)){toast('❌ GPS não disponível',true);return;}
-      const badge=document.getElementById('gpsBadge'); const txt=document.getElementById('gpsTxt');
-      if(badge)badge.className='gps on'; if(txt)txt.textContent='GPS ON';
-      document.querySelectorAll('.gpsbox').forEach(box=>{box.className='gpsbox';const t=box.querySelector('.t b');if(t)t.textContent='GPS transmitindo ao vivo';});
-      iniciarGPS();
+      await ativarGPS();
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     } else if(acao==='rota'){
-      console.log('️ Iniciando rota...');
-      if(!posicaoAtual){toast(' Aguardando GPS...',true);return;}
+      if(!gpsAtivo||!posicaoAtual){toast('⚠️ GPS ainda não ativou. Aguarde...',true);return;}
       toast('🛵 Rota iniciada!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'em_rota',rotaIniciadaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     } else if(acao==='entregar'){
@@ -377,43 +295,112 @@
     setTimeout(carregarEntregas,1000);
   }
 
-  function iniciarGPS(){
-    if(watchId!==null){console.log('⚠️ GPS já ativo');return;}
-    console.log('📡 Chamando watchPosition...');
-    watchId=navigator.geolocation.watchPosition(
-      pos=>{
-        console.log('✅ GPS recebido:',pos.coords.latitude,pos.coords.longitude);
-        const {latitude,longitude,accuracy,speed}=pos.coords;
-        posicaoAtual={lat:latitude,lng:longitude};
-        
-        // Atualiza TODOS os mapas com a nova posição
-        entregas.forEach(e=>{
-          if(e.status==='aceita'||e.status==='em_rota'){
-            api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
-            atualizarPosicaoNoMapa(e,posicaoAtual);
-            // Centraliza o mapa na posição do entregador
-            const m=mapas[e.token];
-            if(m && m.mapa){
-              m.mapa.setView([latitude,longitude],16);
-              console.log('🗺️ Mapa centralizado na posição do entregador');
-            }
-          }
+  // ✅ FUNÇÃO PROFISSIONAL DE GPS
+  async function ativarGPS(){
+    if(gpsAtivo){
+      console.log('⚠️ GPS já está ativo');
+      return;
+    }
+
+    if(!('geolocation' in navigator)){
+      toast('❌ Este dispositivo não suporta GPS',true);
+      return;
+    }
+
+    console.log('📡 Solicitando permissão de localização...');
+    toast('⏳ Solicitando acesso ao GPS...');
+
+    // Primeiro, testa com getCurrentPosition para garantir que funciona
+    try {
+      const posicao = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         });
-      },
-      err=>{
-        console.error('❌ Erro GPS:',err);
-        let msg='Erro no GPS';
-        if(err.code===1)msg='Permissão de localização negada';
-        if(err.code===2)msg='Localização indisponível';
-        if(err.code===3)msg='Tempo esgotado';
-        toast('❌ '+msg,true);
-        const txt=document.getElementById('gpsTxt'); if(txt)txt.textContent='GPS OFF';
-      },
-      {enableHighAccuracy:true,maximumAge:3000,timeout:15000}
-    );
+      });
+
+      console.log('✅ Permissão concedida! Posição inicial:', posicao.coords.latitude, posicao.coords.longitude);
+      
+      // Agora ativa o watchPosition para monitoramento contínuo
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const {latitude, longitude, accuracy, speed} = pos.coords;
+          posicaoAtual = {lat: latitude, lng: longitude};
+          gpsAtivo = true;
+          
+          console.log(' Posição atualizada:', latitude, longitude);
+          
+          // Atualiza UI
+          const badge = document.getElementById('gpsBadge');
+          const txt = document.getElementById('gpsTxt');
+          if(badge){badge.className='gps-status on';}
+          if(txt){txt.textContent='GPS ON';}
+          
+          // Transmite para o Firebase
+          transmitirPosicao(latitude, longitude, accuracy, speed);
+          
+          // Atualiza cards
+          atualizarStatusCards();
+        },
+        (err) => {
+          console.error('❌ Erro GPS:', err);
+          let msg = 'Erro no GPS';
+          if(err.code===1) msg='Permissão de localização negada. Verifique as configurações do navegador.';
+          if(err.code===2) msg='Localização indisponível.';
+          if(err.code===3) msg='Tempo esgotado ao buscar localização.';
+          toast('❌ '+msg, true);
+          gpsAtivo = false;
+          const txt = document.getElementById('gpsTxt');
+          if(txt) txt.textContent='GPS OFF';
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 3000
+        }
+      );
+
+      toast('✅ GPS ativado com sucesso!');
+      
+    } catch (err) {
+      console.error('❌ Falha ao ativar GPS:', err);
+      toast('❌ Não foi possível ativar o GPS. Verifique as permissões.', true);
+    }
   }
 
-  function pararGPS(){ if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;posicaoAtual=null;} }
+  function transmitirPosicao(lat, lng, accuracy, speed){
+    if(!posicaoAtual) return;
+    
+    entregas.forEach(e => {
+      if(e.status === 'aceita' || e.status === 'em_rota'){
+        api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{
+          lat: lat,
+          lng: lng,
+          precisao: Math.round(accuracy || 0),
+          velocidade: Math.round((speed || 0) * 3.6),
+          timestamp: new Date().toISOString(),
+          entregadorId: sessao.id
+        }).catch(err => console.error('Erro ao transmitir posição:', err));
+      }
+    });
+  }
+
+  function pararGPS(){
+    if(watchId !== null){
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    gpsAtivo = false;
+    posicaoAtual = null;
+    
+    const badge = document.getElementById('gpsBadge');
+    const txt = document.getElementById('gpsTxt');
+    if(badge) badge.className='gps-status off';
+    if(txt) txt.textContent='GPS OFF';
+    
+    atualizarStatusCards();
+  }
 
   (function init(){
     const s=carregarSessao();
