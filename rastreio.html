@@ -2,448 +2,351 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#070B0F" />
-<meta name="description" content="Acompanhe sua ordem de serviço em tempo real: status, fotos, valores e previsão de entrega." />
-<title>Acompanhamento de Serviço — OS-PREMIUM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#00E676" />
+<title>Acompanhe sua OS — OS-PREMIUM</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300E676'/><path d='M20 62 L32 62 L40 44 L60 44 L68 62 L82 62' stroke='%23070B0F' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='33' cy='67' r='8' fill='%23070B0F'/><circle cx='67' cy='67' r='8' fill='%23070B0F'/><rect x='44' y='30' width='12' height='12' rx='3' fill='%23070B0F'/></svg>" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  :root{
-    --bg:#070B0F; --card:#0F1720; --card2:#121D28; --line:rgba(255,255,255,.07);
-    --txt:#E6EDF3; --mut:#8B98A5; --green:#00E676; --gold:#F59E0B; --red:#EF4444; --blue:#3B82F6;
-    --r:20px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html{scroll-behavior:smooth}
-  body{
-    background:
-      radial-gradient(1100px 520px at 50% -12%,rgba(0,230,118,.10),transparent 62%),
-      radial-gradient(700px 400px at 100% 100%,rgba(59,130,246,.06),transparent 60%),
-      var(--bg);
-    color:var(--txt);
-    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    padding:0 14px calc(46px + var(--safe-b));
-    min-height:100vh;
-  }
-  .wrap{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:64px}
-
-  /* Barra fixa "AO VIVO" */
-  .topbar{
-    position:fixed;top:0;left:0;right:0;z-index:50;height:56px;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:0 16px;padding-top:env(safe-area-inset-top,0px);
-    background:rgba(7,11,15,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    border-bottom:1px solid var(--line);
-  }
-  .topbar .brand{display:flex;align-items:center;gap:10px;min-width:0}
-  .topbar .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#00E676,#00B25A);display:grid;place-items:center;flex-shrink:0;box-shadow:0 6px 16px rgba(0,230,118,.28)}
-  .topbar .mark svg{width:18px;height:18px;stroke:#04140B;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .topbar b{font-size:14px;letter-spacing:.2px;white-space:nowrap}
-  .topbar .osref{font:700 12px/1 var(--mono);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .live{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--green);text-transform:uppercase;flex-shrink:0}
-  .live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite}
-  @keyframes live{0%{box-shadow:0 0 0 0 rgba(0,230,118,.55)}70%{box-shadow:0 0 0 8px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
-
-  .card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
-
-  .hero .lbl{font:700 11px/1 var(--mono);color:var(--mut);letter-spacing:1.6px;text-transform:uppercase}
-  .hero .num{font:800 clamp(26px,7vw,34px)/1.15 var(--mono);margin:8px 0 12px}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:800}
-  .pill i{width:8px;height:8px;border-radius:50%;background:currentColor;font-style:normal;animation:live 1.8s infinite}
-
-  /* Pipeline animado */
-  .pipe{display:flex;gap:4px;margin-top:20px}
-  .pipe .st{flex:1;position:relative;text-align:center}
-  .pipe .dot{width:30px;height:30px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--mut);position:relative;z-index:2}
-  .pipe .st.done .dot{background:linear-gradient(135deg,#00E676,#00B25A);border-color:transparent;color:#04140B}
-  .pipe .st.active .dot{background:rgba(0,230,118,.14);border-color:var(--green);color:var(--green);animation:live 1.8s infinite}
-  .pipe .st::before{content:'';position:absolute;top:15px;left:-50%;width:100%;height:2px;background:rgba(255,255,255,.08);z-index:1}
-  .pipe .st:first-child::before{display:none}
-  .pipe .st.done::before,.pipe .st.active::before{background:linear-gradient(90deg,#00B25A,#00E676)}
-  .pipe .lb{font-size:clamp(9px,2.6vw,11px);font-weight:700;color:var(--mut)}
-  .pipe .st.done .lb,.pipe .st.active .lb{color:var(--txt)}
-
-  /* Barra de progresso do prazo */
-  .prazo{margin-top:18px}
-  .prazo .hd{display:flex;justify-content:space-between;font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-  .prazo .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
-  .prazo .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00B25A,#00E676);transition:width .6s ease;box-shadow:0 0 12px rgba(0,230,118,.5)}
-  .prazo .fill.warn{background:linear-gradient(90deg,#EAB308,#FACC15)}
-  .prazo .fill.late{background:linear-gradient(90deg,#DC2626,#EF4444)}
-
-  .sec{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:12px}
-  .sec .ic{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:grid;place-items:center;font-size:13px}
-
-  .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px}
-  .row:last-child{border:0}
-  .row .k{color:var(--mut)}
-  .row .v{font-weight:600;text-align:right;word-break:break-word}
-  .txt{font-size:14px;line-height:1.65;white-space:pre-wrap}
-
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
-
-  /* Card de entrega */
-  .ent{border:1px solid rgba(59,130,246,.35);background:linear-gradient(180deg,rgba(59,130,246,.10),rgba(59,130,246,.03));border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
-  .ent::after{content:'';position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.16),transparent 70%);pointer-events:none}
-  .ent .hd{display:flex;align-items:center;gap:11px;margin-bottom:12px;position:relative;z-index:1}
-  .ent .hd .ic{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#3B82F6,#2563EB);display:grid;place-items:center;font-size:19px;box-shadow:0 8px 18px rgba(59,130,246,.25);flex-shrink:0}
-  .ent .hd b{font-size:14px;display:block}
-  .ent .hd span{font-size:11px;color:#9DB8E8}
-  .ent .big{font-size:clamp(16px,4.6vw,19px);font-weight:800;line-height:1.4;position:relative;z-index:1}
-  .ent .sub{font-size:12.5px;color:#B9C6D6;margin-top:6px;line-height:1.6;position:relative;z-index:1}
-  .ent .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:10px;position:relative;z-index:1}
-  .ent .seal{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(59,130,246,.3);font-size:10.5px;color:#8FA6C9;display:flex;align-items:center;gap:7px;position:relative;z-index:1}
-
-  /* Cashback */
-  .cb{border:1px solid rgba(245,158,11,.35);background:linear-gradient(180deg,rgba(245,158,11,.10),rgba(245,158,11,.03));border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
-  .cb::after{content:'';position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.16),transparent 70%);pointer-events:none}
-  .cb .hd{display:flex;align-items:center;gap:11px;margin-bottom:13px;position:relative;z-index:1}
-  .cb .hd .ic{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#F59E0B,#D97706);display:grid;place-items:center;font-size:18px;box-shadow:0 8px 18px rgba(245,158,11,.25);flex-shrink:0}
-  .cb .hd b{font-size:14px;display:block}
-  .cb .hd span{font-size:11px;color:#D9B36A}
-  .cb .vals{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1}
-  .cb .box{background:rgba(0,0,0,.28);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px}
-  .cb .box .l{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:#D9B36A;font-weight:800;margin-bottom:5px}
-  .cb .box .n{font:800 clamp(18px,5vw,22px)/1 var(--mono);color:#FCD34D}
-  .cb .msg{margin-top:12px;font-size:12.5px;color:#EBD9B4;line-height:1.6;background:rgba(0,0,0,.22);border:1px dashed rgba(245,158,11,.32);border-radius:10px;padding:10px 12px;position:relative;z-index:1}
-  .cb .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;position:relative;z-index:1}
-  .cb .tag{font-size:10.5px;font-weight:800;color:#FCD34D;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:4px 10px;border-radius:999px}
-
-  .fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:zoom-in;transition:transform .18s ease}
-  .fotos img:active{transform:scale(.97)}
-  @media(max-width:480px){.fotos{grid-template-columns:repeat(2,1fr)}}
-
-  .chk{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;margin-bottom:6px;font-size:13px;background:rgba(255,255,255,.03)}
-  .chk.ok{background:rgba(0,230,118,.08);color:#B9F6D3}
-  .chk.no{background:rgba(239,68,68,.08);color:#F2C4C4}
-  .chk b{font-weight:800}
-
-  .tl{position:relative;padding-left:22px}
-  .tl::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:rgba(255,255,255,.08)}
-  .tl .ev{position:relative;padding-bottom:14px}
-  .tl .ev:last-child{padding-bottom:0}
-  .tl .ev::before{content:'';position:absolute;left:-20px;top:5px;width:10px;height:10px;border-radius:50%;background:#2A3644;border:2px solid var(--card)}
-  .tl .ev.last::before{background:var(--green);box-shadow:0 0 0 4px rgba(0,230,118,.16)}
-  .tl .t{font-size:14px;font-weight:700}
-  .tl .d{font-size:12px;color:var(--mut)}
-
-  .actions{display:flex;gap:10px}
-  .btn{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
-  .btn:active{transform:scale(.98)}
-  .btn.primary{background:linear-gradient(135deg,#00E676,#00B25A);border-color:transparent;color:#04140B;box-shadow:0 8px 20px rgba(0,230,118,.25)}
-
-  .skel{height:14px;border-radius:6px;margin-bottom:10px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.13),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.15s infinite}
-  @keyframes sh{to{background-position:-200% 0}}
-
-  .state{text-align:center;padding:34px 12px}
-  .state .big{font-size:46px;margin-bottom:12px}
-  .state b{font-size:17px}
-  .state p{margin-top:8px;font-size:13px;color:var(--mut);line-height:1.6}
-
-  .foot{text-align:center;font-size:11.5px;color:var(--mut);padding-top:4px;line-height:1.8}
-  .foot b{color:var(--green)}
-
-  #lb{position:fixed;inset:0;background:rgba(0,0,0,.96);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
-  #lb img{max-width:94vw;max-height:88vh;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.8)}
-  #lb .x{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;display:grid;place-items:center;cursor:pointer}
-
-  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--safe-b));z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 32px rgba(0,230,118,.35);opacity:0;pointer-events:none;transition:opacity .25s ease}
-  #toast.show{opacity:1}
-
-  @media print{
-    .topbar,.actions,#lb,#toast{display:none !important}
-    body{background:#fff;color:#111;padding:0}
-    .wrap{padding-top:0}
-    .card,.ent,.cb{background:#fff;border-color:#ddd;box-shadow:none;color:#111}
-    .row .k,.sec,.foot,.ent .sub,.cb .msg{color:#555}
-    .row .v,.txt,.tl .t{color:#111}
-  }
+  body{background:#070B0F;color:#E6EDF3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+  .topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;background:rgba(7,11,15,.98);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07);z-index:50}
+  .topbar svg{width:30px;height:30px;flex-shrink:0}
+  .topbar b{font-size:13px}
+  .topbar b span{color:#00E676}
+  .wrap{max-width:640px;margin:0 auto;padding:70px 12px 30px}
+  .card{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px;margin-bottom:12px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:12px;font-weight:800}
+  .osnum{font-family:ui-monospace,Consolas,monospace;font-size:22px;font-weight:800;color:#00E676;margin:8px 0 4px}
+  .att{font-size:11px;color:#6B7280}
+  .lbl{font-size:10px;color:#8B98A5;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 4px;font-weight:700}
+  .val{font-size:14px;font-weight:600;word-wrap:break-word}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row .k{color:#8B98A5}
+  .row .v{font-weight:700;text-align:right}
+  .timeline{margin-top:6px}
+  .tl-item{display:flex;gap:10px;padding:6px 0;font-size:13px}
+  .tl-dot{width:10px;height:10px;border-radius:50%;background:#1F2D3A;margin-top:5px;flex-shrink:0}
+  .tl-item.ativo .tl-dot{background:#00E676;box-shadow:0 0 0 4px rgba(0,230,118,.15)}
+  .tl-item .d{color:#6B7280;font-size:11px}
+  .fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:6px}
+  .fotos img{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:#fff}
+  .prev{padding:12px;border-radius:12px;font-weight:800;font-size:13px;text-align:center;border:1px solid}
+  .cash{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.3);border-radius:12px;padding:12px;margin-top:10px}
+  .cash .n{font-size:20px;font-weight:800;color:#00E676}
+  .state{text-align:center;padding:40px 12px;color:#8B98A5}
+  .state .big{font-size:44px;margin-bottom:10px}
+  #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:16px}
+  #lightbox img{max-width:95vw;max-height:92vh;border-radius:12px}
+  /* Rastreio da entrega */
+  #rl-card{background:#0F1720;border:1px solid rgba(0,230,118,.35);border-radius:16px;padding:16px;margin-bottom:12px}
+  #rl-titulo{font-size:14px;font-weight:800;color:#00E676;margin-bottom:10px}
+  #rl-banner{padding:12px;border-radius:12px;font-weight:800;font-size:13px;text-align:center;margin-bottom:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
+  #rl-mapa{height:280px;border-radius:12px;overflow:hidden;position:relative;background:#0E1A24}
+  #rl-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.9);color:#8B98A5;font-size:12px;z-index:5}
+  #rl-eta{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#8B98A5;font-size:12px;font-weight:700;text-align:center}
+  .foot{text-align:center;font-size:11px;color:#6B7280;margin-top:16px}
+  .foot b{color:#00E676}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="brand">
-    <div class="mark">
-      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4L14 13l-3-3 3.7-3.7z"/></svg>
-    </div>
-    <div style="min-width:0">
-      <b>OS-PREMIUM</b>
-      <div class="osref" id="topref">Carregando...</div>
-    </div>
-  </div>
-  <span class="live"><i></i>Ao vivo</span>
+  <svg viewBox="0 0 100 100"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E676"/><stop offset="100%" stop-color="#00B25A"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg)"/><path d="M20 62 L32 62 L40 44 L60 44 L68 62 L82 62" stroke="#070B0F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="33" cy="67" r="8" fill="#070B0F"/><circle cx="67" cy="67" r="8" fill="#070B0F"/><rect x="45" y="32" width="10" height="12" rx="3" fill="#070B0F"/><circle cx="50" cy="38" r="2" fill="#00E676"/></svg>
+  <b>OS-PREMIUM <span>• Acompanhamento</span></b>
 </div>
 
 <div class="wrap">
-  <div class="card" id="content">
-    <div class="skel" style="width:38%"></div>
-    <div class="skel" style="width:62%;height:26px"></div>
-    <div class="skel" style="width:46%"></div>
-    <div class="skel" style="width:80%"></div>
+  <div id="os-section"><div class="card state"><div class="big">⏳</div>Carregando sua ordem de serviço...</div></div>
+
+  <div id="rl-box" style="display:none">
+    <div id="rl-card">
+      <div id="rl-titulo">🛵 Rastreamento da entrega ao vivo</div>
+      <div id="rl-banner">Carregando...</div>
+      <div id="rl-mapa"><div id="rl-load">🗺️ Preparando mapa...</div></div>
+      <div id="rl-eta">Aguardando o GPS do entregador...</div>
+    </div>
   </div>
-  <div class="foot" id="foot"></div>
+
+  <div class="foot"><b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>Página atualizada automaticamente</div>
 </div>
 
-<div id="lb" onclick="this.style.display='none'">
-  <div class="x" onclick="event.stopPropagation();document.getElementById('lb').style.display='none'">×</div>
-  <img id="lbImg" src="" alt="" />
-</div>
-<div id="toast"></div>
+<div id="lightbox" onclick="this.style.display='none'"><img id="lightbox-img" src="" alt="" /></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
-  const token = new URLSearchParams(location.search).get('t');
-  const el = document.getElementById('content');
-  const foot = document.getElementById('foot');
-  const topref = document.getElementById('topref');
-  let lastJson = '';
-  let lastLoad = Date.now();
+const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
+const token = new URLSearchParams(location.search).get('t');
 
-  const cores = {
-    'Em Reparo':['#FACC15','rgba(250,204,21,.14)'], 'Aguardando Peça':['#3B82F6','rgba(59,130,246,.14)'],
-    'Pronto':['#00E676','rgba(0,230,118,.14)'], 'Entregue':['#9CA3AF','rgba(156,163,175,.14)'],
-    'Aguardando Técnico':['#F59E0B','rgba(245,158,11,.14)'], 'Em Execução':['#3B82F6','rgba(59,130,246,.14)'],
-    'Laudo Criado':['#A855F7','rgba(168,85,247,.14)'], 'Finalizado':['#00E676','rgba(0,230,118,.14)'],
-    'Pronto p/ Fechamento':['#00E676','rgba(0,230,118,.14)'],
-  };
-  const PIPE = ['Recebido','Em manutenção','Pronto','Entregue'];
-  const stage = (s) => {
-    if (s === 'Entregue') return 4;
-    if (['Pronto','Pronto p/ Fechamento','Finalizado'].includes(s)) return 3;
-    if (['Em Reparo','Aguardando Peça','Aguardando Técnico','Em Execução','Laudo Criado'].includes(s)) return 2;
-    return 1;
-  };
-  const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-  const parseBR = (s) => {
-    if (!s) return null;
-    const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{4})(?:[ ,]+(\d{2}):(\d{2}))?/);
-    if (!m) return null;
-    return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0));
-  };
-  const faltam = (min) => {
-    if (min < 0) return null;
-    if (min < 60) return `faltam ${min} min`;
-    const h = Math.floor(min/60), m = min%60;
-    if (h < 24) return m ? `faltam ${h}h ${m}min` : `faltam ${h}h`;
-    const d = Math.floor(h/24), rh = h%24;
-    return rh ? `faltam ${d}d ${rh}h` : `faltam ${d}d`;
-  };
-  const abrirFoto = src => { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display='flex'; };
-  document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('lb').style.display='none'; });
+let osData = null, lastJson = '';
+let entregaToken = null, map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
 
-  const toast = (msg) => {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-  };
-  const compartilhar = () => {
-    const url = location.href;
-    if (navigator.share) { navigator.share({ title: 'Acompanhamento OS-PREMIUM', url }).catch(() => {}); }
-    else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(() => toast('🔗 Link copiado!')).catch(() => {}); }
-    else toast('Copie o endereço do navegador');
-  };
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  function pipeHtml(st){
-    return '<div class="pipe">' + PIPE.map((lb,i)=>{
-      const n=i+1;
-      const cls = n<st?'st done':(n===st?'st active':'st');
-      const inner = n<st ? '✓' : (n===st ? '●' : n);
-      return `<div class="${cls}"><div class="dot">${inner}</div><div class="lb">${lb}</div></div>`;
-    }).join('') + '</div>';
+const STATUS_COR = {
+  'Em Reparo':['#FACC15','rgba(250,204,21,.14)'],
+  'Aguardando Peça':['#3B82F6','rgba(59,130,246,.14)'],
+  'Aguardando Técnico':['#F59E0B','rgba(245,158,11,.14)'],
+  'Em Execução':['#3B82F6','rgba(59,130,246,.14)'],
+  'Laudo Criado':['#A855F7','rgba(168,85,247,.14)'],
+  'Pronto':['#00E676','rgba(0,230,118,.14)'],
+  'Pronto p/ Fechamento':['#00E676','rgba(0,230,118,.14)'],
+  'Finalizado':['#00E676','rgba(0,230,118,.14)'],
+  'Entregue':['#9CA3AF','rgba(156,163,175,.14)'],
+  'Cancelado':['#EF4444','rgba(239,68,68,.14)']
+};
+
+function checklistArr(c){
+  if(!c) return [];
+  if(Array.isArray(c)) return c;
+  if(typeof c === 'object') return Object.entries(c).map(([nome,resultado])=>({nome,resultado}));
+  return [];
+}
+
+function renderOS(){
+  const d = osData;
+  const sec = document.getElementById('os-section');
+  const cor = STATUS_COR[d.status] || ['#9CA3AF','rgba(156,163,175,.14)'];
+
+  let html = '';
+
+  // Expirado?
+  if(d.expiraEm && new Date(d.expiraEm).getTime() < Date.now()){
+    html += '<div class="card state"><div class="big">⌛</div><b>Link expirado</b><p style="margin-top:6px">Fale com a loja para receber um novo acompanhamento.</p></div>';
+    sec.innerHTML = html;
+    return;
   }
 
-  function prazoHtml(os, now){
-    if (!os.entrega_programada) return '';
-    const prog = new Date(os.entrega_programada);
-    if (isNaN(prog.getTime())) return '';
-    const start = parseBR((os.historico||[])[0] && (os.historico||[])[0].data);
-    if (!start || prog <= start) return '';
-    let pct = ((now - start) / (prog - start)) * 100;
-    pct = Math.max(0, Math.min(100, pct));
-    if (os.status === 'Entregue') pct = 100;
-    const cls = pct >= 100 ? (os.status==='Entregue' ? '' : 'late') : (pct > 85 ? 'warn' : '');
-    return `
-      <div class="prazo">
-        <div class="hd"><span>Entrada</span><span>${Math.round(pct)}% do prazo</span><span>Previsão</span></div>
-        <div class="bar"><div class="fill ${cls}" style="width:${pct}%"></div></div>
-      </div>`;
+  // Cabeçalho
+  html += `
+    <div class="card">
+      <span class="badge" style="color:${cor[0]};background:${cor[1]}">${esc(d.status)||'—'}</span>
+      <div class="osnum">OS #${esc(d.numero)}</div>
+      <div class="att">Atualizado em ${esc(d.atualizadoEm)||'—'}</div>
+    </div>`;
+
+  // Previsão de entrega
+  if(d.entrega_programada){
+    const prog = new Date(d.entrega_programada).getTime();
+    const diff = Math.round((prog - Date.now())/60000);
+    let txt, c;
+    if(diff < 0){ txt = `ATRASADA há ${Math.abs(diff)} min`; c = '#EF4444'; }
+    else if(diff < 60){ txt = `em ${diff} min`; c = diff <= 30 ? '#EF4444' : '#FACC15'; }
+    else { const h = Math.floor(diff/60), m = diff%60; txt = m ? `em ${h}h${m}` : `em ${h}h`; c = '#00E676'; }
+    html += `<div class="prev" style="color:${c};border-color:${c};background:${c}18;margin-bottom:12px">⏰ Entrega prevista ${txt} — ${new Date(prog).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`;
   }
 
-  function entregaHtml(os, now){
-    if (!os.entrega_programada) return '';
-    const prog = new Date(os.entrega_programada);
-    if (isNaN(prog.getTime())) return '';
-    const diffMin = Math.round((prog - now) / 60000);
-    const fmt = cap(prog.toLocaleString('pt-BR',{weekday:'long', day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}));
-    let badge, badgeCor, titulo, sub;
-    if (os.status === 'Entregue') {
-      const last = (os.historico||[]).slice(-1)[0];
-      badge='✅ Concluído'; badgeCor='#00E676';
-      titulo='Aparelho entregue';
-      sub= last ? `Entrega registrada em ${esc(last.data)}. Obrigado pela preferência!` : 'Obrigado pela preferência!';
-    } else if (diffMin < 0) {
-      badge='🛠️ Em retoques finais'; badgeCor='#F59E0B';
-      titulo='Estamos finalizando seu aparelho';
-      sub='Nossa equipe está concluindo os últimos testes de qualidade. Em breve confirmamos a retirada por aqui e pelo WhatsApp.';
-    } else if (prog.toDateString() === now.toDateString()) {
-      badge='⏰ Hoje'; badgeCor='#FACC15';
-      titulo=`Fica pronto hoje, às ${prog.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-      sub=(faltam(diffMin)? cap(faltam(diffMin))+' — ':'')+'já deixaremos tudo separado e testado para você.';
-    } else {
-      badge='📅 Agendada'; badgeCor='#3B82F6';
-      titulo=fmt;
-      sub=faltam(diffMin)? cap(faltam(diffMin))+'. Qualquer alteração, avisaremos antes por aqui e pelo WhatsApp.' : '';
+  // Histórico
+  if(Array.isArray(d.historico) && d.historico.length){
+    html += '<div class="card"><div class="lbl">📋 Histórico</div><div class="timeline">';
+    d.historico.forEach((h,i) => {
+      const ativo = i === d.historico.length-1;
+      html += `<div class="tl-item ${ativo?'ativo':''}"><div class="tl-dot"></div><div><div>${esc(h.status)}</div><div class="d">${esc(h.data)||''}</div></div></div>`;
+    });
+    html += '</div></div>';
+  }
+
+  // Equipamento
+  html += `
+    <div class="card">
+      <div class="lbl">💻 Equipamento</div>
+      <div class="val">${esc(d.equipamento)||'—'} ${esc(d.marca)||''} ${esc(d.modelo)||''}</div>
+      ${d.numeroSerie ? '<div class="att" style="margin-top:2px">Nº série/IMEI: '+esc(d.numeroSerie)+'</div>' : ''}
+      <div class="lbl">🔧 Defeito relatado</div>
+      <div class="val" style="font-weight:500">${esc(d.defeito)||'—'}</div>
+      ${d.observacoes ? '<div class="lbl">📝 Observações</div><div class="val" style="font-weight:500">'+esc(d.observacoes)+'</div>' : ''}
+    </div>`;
+
+  // Valores
+  html += `
+    <div class="card">
+      <div class="lbl">💰 Valores</div>
+      <div class="row"><span class="k">Entrada</span><span class="v">R$ ${moeda(d.valorEntrada)}</span></div>
+      <div class="row"><span class="k">Orçamento</span><span class="v">R$ ${moeda(d.valorOrcamento)}</span></div>
+      <div class="row"><span class="k">Restante</span><span class="v" style="color:${(parseFloat(d.valorRestante)||0)>0?'#EF4444':'#00E676'}">R$ ${moeda(d.valorRestante)}</span></div>
+      <div class="row"><span class="k">Pagamento</span><span class="v">${esc(d.formaPagamento)||'—'} • ${esc(d.statusPagamento)||'—'}</span></div>
+      ${d.cashback && d.cashback.ativo ? `
+        <div class="cash">
+          <div class="lbl" style="margin:0 0 4px;color:#00E676">💚 Cashback</div>
+          <div class="row"><span class="k">Seu saldo disponível</span><span class="n">R$ ${moeda(d.cashback.saldo)}</span></div>
+          <div class="row"><span class="k">Previsão nesta OS</span><span class="v" style="color:#00E676">+ R$ ${moeda(d.cashback.previsaoEstaOS)}</span></div>
+          <div class="att" style="margin-top:6px">Taxa ${d.cashback.taxa}% • validade ${d.cashback.validadeMeses} meses</div>
+        </div>` : ''}
+    </div>`;
+
+  // Peças
+  if(Array.isArray(d.pecas) && d.pecas.length){
+    html += '<div class="card"><div class="lbl">🔩 Peças/serviços utilizados</div>';
+    d.pecas.forEach(p => {
+      html += `<div class="row"><span class="k">${p.quantidade||1}x ${esc(p.nome)}</span><span class="v">R$ ${moeda((parseFloat(p.valorUnitario||p.valor||p.preco)||0)*(parseInt(p.quantidade)||1))}</span></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Checklist
+  const cl = checklistArr(d.checklist);
+  if(cl.length){
+    html += '<div class="card"><div class="lbl">✅ Checklist</div>';
+    cl.forEach(c => {
+      const ok = c.resultado === true || c.resultado === 'ok';
+      const falha = c.resultado === false || c.resultado === 'falha';
+      html += `<div class="row"><span class="k" style="text-transform:capitalize">${esc(c.nome)}</span><span class="v" style="color:${ok?'#00E676':falha?'#EF4444':'#6B7280'}">${ok?'✔ OK':falha?'✘ Falha':'—'}</span></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Fotos
+  if(Array.isArray(d.fotos) && d.fotos.length){
+    html += '<div class="card"><div class="lbl">📸 Fotos ('+d.fotos.length+')</div><div class="fotos">';
+    d.fotos.forEach((f,i) => { html += `<img src="${f}" onclick="abrirFoto(${i})" alt="Foto ${i+1}" />`; });
+    html += '</div></div>';
+  }
+
+  // Laudo
+  if(d.laudo){
+    html += `<div class="card"><div class="lbl">📝 Laudo técnico</div><div class="val" style="font-weight:500;white-space:pre-wrap">${esc(d.laudo)}</div></div>`;
+  }
+
+  // Garantia
+  html += `<div class="card"><div class="row"><span class="k">🛡️ Garantia de serviço</span><span class="v">${parseInt(d.garantia)||90} dias</span></div></div>`;
+
+  sec.innerHTML = html;
+}
+
+window.abrirFoto = (i) => {
+  const f = osData.fotos[i];
+  if(!f) return;
+  document.getElementById('lightbox-img').src = f;
+  document.getElementById('lightbox').style.display = 'flex';
+};
+
+async function carregarOS(){
+  if(!token){
+    document.getElementById('os-section').innerHTML = '<div class="card state"><div class="big">🔗</div><b>Link inválido</b></div>';
+    return;
+  }
+  try{
+    const r = await fetch(FB+'/os_public/'+encodeURIComponent(token)+'.json');
+    const d = await r.json();
+    if(!d){
+      document.getElementById('os-section').innerHTML = '<div class="card state"><div class="big">📭</div><b>OS não encontrada</b><p style="margin-top:6px">Verifique o link com a loja.</p></div>';
+      return;
     }
-    return `
-      <div class="ent">
-        <div class="hd">
-          <div class="ic">📅</div>
-          <div><b>Previsão de Entrega</b><span>Compromisso agendado com você</span></div>
-        </div>
-        <span class="badge" style="color:${badgeCor};background:${badgeCor}18;border:1px solid ${badgeCor}50">${badge}</span>
-        <div class="big">${esc(titulo)}</div>
-        ${sub?`<div class="sub">${esc(sub)}</div>`:''}
-        <div class="seal">🤝 Compromisso OS-PREMIUM: você acompanha cada etapa em tempo real, sem precisar ligar na loja.</div>
-      </div>`;
-  }
+    const json = JSON.stringify(d);
+    if(json !== lastJson){
+      lastJson = json;
+      osData = d;
+      renderOS();
+      if(d.entregaToken && !entregaToken) iniciarRastreioEntrega(d.entregaToken);
+    }
+  }catch(e){}
+}
 
-  function cashbackHtml(cb, os){
-    if(!cb || !cb.ativo) return '';
-    const saldo=parseFloat(cb.saldo)||0, prev=parseFloat(cb.previsaoEstaOS)||0, ger=parseFloat(cb.gerado)||0;
-    const fin=['Finalizado','Entregue'].includes(os.status);
-    let msg;
-    if(fin && ger>0) msg=`Seu cashback de <b>R$ ${moeda(ger)}</b> foi creditado. Use em seu próximo serviço ou troque por película.`;
-    else if(os.statusPagamento==='Pago' && prev>0) msg=`Ao concluir este serviço, <b>R$ ${moeda(prev)}</b> serão creditados automaticamente no seu cashback.`;
-    else msg=`Ao pagar esta OS, você acumula <b>${cb.taxa}%</b> de cashback para usar em serviços futuros.`;
-    return `
-      <div class="cb">
-        <div class="hd">
-          <div class="ic">💰</div>
-          <div><b>Programa de Cashback</b><span>Benefício exclusivo para clientes</span></div>
-        </div>
-        <div class="vals">
-          <div class="box"><div class="l">Seu saldo</div><div class="n">R$ ${moeda(saldo)}</div></div>
-          <div class="box"><div class="l">${fin&&ger>0?'Creditado nesta OS':'Previsto nesta OS'}</div><div class="n">R$ ${moeda(fin&&ger>0?ger:prev)}</div></div>
-        </div>
-        <div class="msg">${msg}</div>
-        <div class="tags">
-          <span class="tag">Validade ${cb.validadeMeses} meses</span>
-          <span class="tag">R$ ${moeda(cb.peliculaCustoCashback)} = 1 película</span>
-          <span class="tag">Resgate em 1 dia útil</span>
-        </div>
-      </div>`;
-  }
+/* ============ RASTREIO DA ENTREGA AO VIVO ============ */
+const BANNER = {
+  aguardando: ['#FACC15','rgba(250,204,21,.12)','⏳ Aguardando o entregador retirar o pedido'],
+  aceita:     ['#3B82F6','rgba(59,130,246,.12)','📦 Pedido com o entregador — saindo para entrega'],
+  em_rota:    ['#00E676','rgba(0,230,118,.12)','🛵 A caminho! Acompanhe no mapa abaixo'],
+  entregue:   ['#9CA3AF','rgba(156,163,175,.12)','✅ Entrega concluída! Obrigado pela preferência'],
+  cancelada:  ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja'],
+  recusada:   ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja']
+};
 
-  async function carregar(){
-    if(!token){ el.innerHTML='<div class="state"><div class="big">🔗</div><b>Link inválido</b><p>Solicite um novo link de acompanhamento à loja.</p></div>'; return; }
-    try{
-      const r = await fetch(`${FB}/os_public/${encodeURIComponent(token)}.json`);
-      const os = await r.json();
-      const json = JSON.stringify(os);
-      lastLoad = Date.now();
-      if(!os){ el.innerHTML='<div class="state"><div class="big">🔍</div><b>OS não encontrada</b><p>Verifique o link recebido ou fale com a loja.</p></div>'; foot.innerHTML=''; return; }
-      if(os.expiraEm && new Date(os.expiraEm).getTime() < Date.now()){
-        el.innerHTML='<div class="state"><div class="big">⏳</div><b>Link expirado</b><p>Por segurança, este acompanhamento expirou.<br/>Entre em contato com a loja para mais informações.</p></div>';
-        foot.innerHTML='';
+function setBanner(st){
+  const b = BANNER[st] || BANNER.aguardando;
+  const el = document.getElementById('rl-banner');
+  el.style.color = b[0]; el.style.background = b[1]; el.style.borderColor = b[0];
+  el.textContent = b[2];
+}
+
+function distKm(a,b,c,d){
+  const R=6371, tr=x=>x*Math.PI/180;
+  const dLa=tr(c-a), dLo=tr(d-b);
+  const h=Math.sin(dLa/2)**2 + Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+
+function initMapa(){
+  if(map) return;
+  map = L.map('rl-mapa',{zoomControl:true,attributionControl:false}).setView([-23.55,-46.63],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+  setTimeout(()=>map.invalidateSize(),400);
+}
+
+function geocode(end, cb){
+  fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(end)+'&limit=1&countrycodes=br',{headers:{'User-Agent':'OS-Premium-Rastreio/1.0'}})
+    .then(r=>r.json())
+    .then(d=>cb(d && d.length ? {lat:parseFloat(d[0].lat), lng:parseFloat(d[0].lon)} : null))
+    .catch(()=>cb(null));
+}
+
+function iniciarRastreioEntrega(t){
+  entregaToken = t;
+  document.getElementById('rl-box').style.display = 'block';
+  loopEntrega();
+  setInterval(loopEntrega, 5000);
+}
+
+function loopEntrega(){
+  if(!entregaToken) return;
+  fetch(FB+'/entregas/'+encodeURIComponent(entregaToken)+'.json')
+    .then(r=>r.json())
+    .then(ent=>{
+      if(!ent) return;
+      setBanner(ent.status);
+
+      if(ent.endereco && !coordsDest){
+        geocode(ent.endereco, c=>{
+          if(!c){ document.getElementById('rl-load').innerHTML='📍 Mapa indisponível para este endereço'; return; }
+          coordsDest = c;
+          initMapa();
+          mDest = L.marker([c.lat,c.lng],{icon:L.divIcon({html:'<div style="font-size:30px">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);
+          document.getElementById('rl-load').style.display='none';
+          map.setView([c.lat,c.lng],14);
+        });
+      }
+
+      if(['entregue','cancelada','recusada'].includes(ent.status)){
+        if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
+        const eta = document.getElementById('rl-eta');
+        eta.style.background='rgba(255,255,255,.04)'; eta.style.borderColor='rgba(255,255,255,.1)'; eta.style.color='#8B98A5';
+        eta.textContent = ent.status==='entregue' ? '✅ Pedido entregue. Obrigado!' : 'Entrega encerrada.';
         return;
       }
-      if (json === lastJson) return;
-      lastJson = json;
 
-      const now = new Date();
-      const [cor,bg] = cores[os.status] || ['#9CA3AF','rgba(156,163,175,.14)'];
-      const fotos = Array.isArray(os.fotos)?os.fotos:[];
-      const pecas = Array.isArray(os.pecas)?os.pecas:[];
-      const chk = os.checklist && typeof os.checklist==='object' ? Object.entries(os.checklist) : [];
-      const hist = os.historico || [];
-      const st = stage(os.status);
+      fetch(FB+'/posicoes/'+encodeURIComponent(entregaToken)+'.json')
+        .then(r=>r.json())
+        .then(pos=>{
+          const eta = document.getElementById('rl-eta');
+          if(pos && pos.lat && pos.lng){
+            initMapa();
+            if(!mMoto){
+              mMoto = L.marker([pos.lat,pos.lng],{icon:L.divIcon({html:'<div style="font-size:28px">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map);
+            } else {
+              mMoto.setLatLng([pos.lat,pos.lng]);
+            }
+            if(coordsDest){
+              if(linha) map.removeLayer(linha);
+              linha = L.polyline([[pos.lat,pos.lng],[coordsDest.lat,coordsDest.lng]],{color:'#00E676',weight:4,dashArray:'8 8',opacity:.8}).addTo(map);
+              map.fitBounds(linha.getBounds(),{padding:[30,30]});
+              const d = distKm(pos.lat,pos.lng,coordsDest.lat,coordsDest.lng);
+              eta.style.background='rgba(0,230,118,.08)'; eta.style.borderColor='rgba(0,230,118,.3)'; eta.style.color='#00E676';
+              eta.innerHTML = '🛵 O entregador está a <b>'+d.toFixed(1)+' km</b> de você • chegada em ~<b>'+Math.max(1,Math.round(d/30*60))+' min</b>';
+            }
+            document.getElementById('rl-load').style.display='none';
+          } else {
+            eta.textContent = '⏳ Aguardando o GPS do entregador ligar...';
+          }
+        });
+    })
+    .catch(()=>{});
+}
 
-      topref.textContent = `OS #${os.numero} • ${os.status}`;
-
-      el.outerHTML = `
-        <div class="card hero" id="content">
-          <div class="lbl">Ordem de serviço</div>
-          <div class="num">#${esc(os.numero)}</div>
-          <span class="pill" style="color:${cor};background:${bg}"><i></i>${esc(os.status)}</span>
-          ${pipeHtml(st)}
-          ${prazoHtml(os, now)}
-        </div>
-
-        ${entregaHtml(os, now)}
-        ${cashbackHtml(os.cashback, os)}
-
-        <div class="grid2">
-          <div class="card">
-            <div class="sec"><span class="ic">👤</span>Cliente</div>
-            <div class="row"><span class="k">Nome</span><span class="v">${esc(os.cliente)||'—'}</span></div>
-            <div class="row"><span class="k">Telefone</span><span class="v">${esc(os.telefone)||'—'}</span></div>
-          </div>
-          <div class="card">
-            <div class="sec"><span class="ic">💻</span>Equipamento</div>
-            <div class="row"><span class="k">Tipo</span><span class="v">${esc(os.equipamento)||'—'}</span></div>
-            <div class="row"><span class="k">Marca</span><span class="v">${esc(os.marca)||'—'}</span></div>
-            <div class="row"><span class="k">Modelo</span><span class="v">${esc(os.modelo)||'—'}</span></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="sec"><span class="ic">🔧</span>Defeito relatado</div>
-          <p class="txt">${esc(os.defeito)||'—'}</p>
-          ${os.observacoes?`<div class="sec" style="margin-top:14px"><span class="ic">📝</span>Observações</div><p class="txt">${esc(os.observacoes)}</p>`:''}
-        </div>
-
-        <div class="card">
-          <div class="sec"><span class="ic">💰</span>Valores</div>
-          <div class="row"><span class="k">Entrada</span><span class="v">R$ ${moeda(os.valorEntrada)}</span></div>
-          <div class="row"><span class="k">Total do serviço</span><span class="v">R$ ${moeda(os.valorOrcamento)}</span></div>
-          ${os.cashback && os.cashback.usado>0?`<div class="row"><span class="k" style="color:#F59E0B">Cashback utilizado</span><span class="v" style="color:#F59E0B">− R$ ${moeda(os.cashback.usado)}</span></div>`:''}
-          <div class="row"><span class="k">Saldo restante</span><span class="v" style="color:${(os.valorRestante||0)>0?'var(--red)':'var(--green)'}">R$ ${moeda(os.valorRestante)}</span></div>
-          <div class="row"><span class="k">Pagamento</span><span class="v">${esc(os.formaPagamento)||'—'} • ${esc(os.statusPagamento)||'—'}</span></div>
-        </div>
-
-        ${pecas.length?`<div class="card"><div class="sec"><span class="ic">🔩</span>Peças utilizadas</div>${pecas.map(p=>`<div class="row"><span class="k">${p.quantidade}x ${esc(p.nome)}</span><span class="v">R$ ${moeda((parseFloat(p.preco_unitario||p.valor||p.preco)||0)*(parseInt(p.quantidade)||1))}</span></div>`).join('')}</div>`:''}
-
-        ${chk.length?`<div class="card"><div class="sec"><span class="ic">✅</span>Checklist de entrada</div>${chk.filter(([k])=>k!=='estadoGeral').map(([k,v])=>`<div class="chk ${v?'ok':'no'}"><span>${esc(k)}</span><b>${v?'✔ OK':'—'}</b></div>`).join('')}${os.checklist&&os.checklist.estadoGeral?`<p style="margin-top:8px;font-size:12.5px;color:var(--mut)">Estado geral: ${esc(os.checklist.estadoGeral)}</p>`:''}</div>`:''}
-
-        ${fotos.length?`<div class="card"><div class="sec"><span class="ic">📸</span>Fotos do aparelho (${fotos.length})</div><div class="fotos">${fotos.map(f=>`<img src="${f}" loading="lazy" onclick="abrirFoto(this.src)" alt="Foto do aparelho"/>`).join('')}</div></div>`:''}
-
-        ${os.laudo?`<div class="card" style="border-left:3px solid #A855F7"><div class="sec"><span class="ic">📄</span>Laudo técnico</div><p class="txt">${esc(os.laudo)}</p></div>`:''}
-
-        <div class="card">
-          <div class="sec"><span class="ic">🛠️</span>Responsável & garantia</div>
-          <div class="row"><span class="k">Técnico responsável</span><span class="v">${esc(os.tecnico)||'—'}</span></div>
-          <div class="row"><span class="k">Garantia do serviço</span><span class="v" style="color:var(--green)">${esc(os.garantia)||90} dias</span></div>
-        </div>
-
-        ${hist.length?`<div class="card"><div class="sec"><span class="ic">🕒</span>Histórico</div><div class="tl">${hist.map((h,i)=>`<div class="ev ${i===hist.length-1?'last':''}"><div class="t">${esc(h.status)}</div><div class="d">${esc(h.data)}</div></div>`).join('')}</div></div>`:''}
-
-        <div class="actions">
-          <button class="btn primary" onclick="compartilhar()"> Compartilhar</button>
-          <button class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
-        </div>
-      `;
-
-      foot.innerHTML = `Atualizado <span id="upd">agora</span> • Válido até ${os.expiraEm?new Date(os.expiraEm).toLocaleDateString('pt-BR'):''}<br/><b>OS-PREMIUM</b> • Tecnologia que gera resultados`;
-    }catch(e){
-      el.innerHTML='<div class="state"><div class="big">⚠️</div><b>Não foi possível carregar</b><p>Verifique sua conexão e tente novamente.</p></div>';
-    }
-  }
-
-  setInterval(() => {
-    const s = Math.round((Date.now() - lastLoad) / 1000);
-    const upd = document.getElementById('upd');
-    if (upd) upd.textContent = s < 5 ? 'agora' : `há ${s}s`;
-  }, 5000);
-
-  carregar();
-  setInterval(carregar, 15000);
+/* ============ INIT ============ */
+carregarOS();
+setInterval(carregarOS, 10000);
 </script>
 </body>
 </html>
