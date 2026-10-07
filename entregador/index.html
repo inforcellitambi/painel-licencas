@@ -10,127 +10,19 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{font-size:16px;-webkit-text-size-adjust:100%}
-  body{
-    background:#070B0F;
-    color:#E6EDF3;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    font-size:15px;
-    line-height:1.5;
-    padding:0;
-    min-height:100vh;
-    overflow-x:hidden;
-  }
-  
-  /* Container principal - mobile first */
-  .wrap{
-    width:100%;
-    max-width:100%;
-    margin:0 auto;
-    padding:70px 12px 20px;
-  }
-  
-  /* Topbar fixa */
-  .topbar{
-    position:fixed;
-    top:0;left:0;right:0;
-    height:56px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 12px;
-    background:rgba(7,11,15,.98);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-    border-bottom:1px solid rgba(255,255,255,.07);
-    z-index:50;
-  }
+  body{background:#070B0F;color:#E6EDF3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+  .wrap{width:100%;max-width:100%;margin:0 auto;padding:70px 12px 20px}
+  .topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:rgba(7,11,15,.98);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07);z-index:50}
   .brand b{font-size:13px;font-weight:800}
   .brand span{color:#00E676}
-  .gps{
-    font-size:9px;
-    font-weight:800;
-    padding:5px 10px;
-    border-radius:999px;
-    background:rgba(239,68,68,.1);
-    color:#EF4444;
-    border:1px solid rgba(239,68,68,.3);
-    white-space:nowrap;
-  }
-  .gps.on{
-    background:rgba(0,230,118,.1);
-    color:#00E676;
-    border-color:rgba(0,230,118,.3);
-  }
-  
-  /* Cards */
-  .card{
-    background:#0F1720;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:16px;
-    padding:14px;
-    margin-bottom:10px;
-    width:100%;
-  }
-  
-  /* Pills de status */
-  .pill{
-    display:inline-block;
-    padding:6px 12px;
-    border-radius:999px;
-    font-size:11px;
-    font-weight:800;
-    margin-bottom:8px;
-    white-space:nowrap;
-  }
-  
-  /* Labels */
-  .lbl{
-    font-size:10px;
-    color:#8B98A5;
-    text-transform:uppercase;
-    letter-spacing:.8px;
-    margin:8px 0 4px;
-    font-weight:700;
-  }
-  
-  /* Endereços e nomes */
-  .addr{
-    font-size:14px;
-    font-weight:700;
-    line-height:1.4;
-    word-wrap:break-word;
-    overflow-wrap:break-word;
-  }
-  
-  /* Número da OS */
-  .os-num{
-    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
-    font-size:16px;
-    font-weight:800;
-    margin-bottom:8px;
-    word-break:break-all;
-  }
-  
-  /* Botões */
-  .btn{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    min-height:48px;
-    padding:0 12px;
-    border-radius:12px;
-    border:none;
-    font-weight:800;
-    font-size:13px;
-    cursor:pointer;
-    width:100%;
-    margin-bottom:8px;
-    color:#fff;
-    font-family:inherit;
-    text-decoration:none;
-    white-space:nowrap;
-  }
+  .gps{font-size:9px;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(239,68,68,.1);color:#EF4444;border:1px solid rgba(239,68,68,.3);white-space:nowrap}
+  .gps.on{background:rgba(0,230,118,.1);color:#00E676;border-color:rgba(0,230,118,.3)}
+  .card{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px;margin-bottom:10px;width:100%}
+  .pill{display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:8px;white-space:nowrap}
+  .lbl{font-size:10px;color:#8B98A5;text-transform:uppercase;letter-spacing:.8px;margin:8px 0 4px;font-weight:700}
+  .addr{font-size:14px;font-weight:700;line-height:1.4;word-wrap:break-word;overflow-wrap:break-word}
+  .os-num{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:16px;font-weight:800;margin-bottom:8px;word-break:break-all}
+  .btn{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 12px;border-radius:12px;border:none;font-weight:800;font-size:13px;cursor:pointer;width:100%;margin-bottom:8px;color:#fff;font-family:inherit;text-decoration:none;white-space:nowrap}
   .btn:active{transform:scale(.98)}
   .btn.green{background:linear-gradient(135deg,#00E676,#00B25A);color:#000}
   .btn.blue{background:linear-gradient(135deg,#3B82F6,#2563EB)}
@@ -138,189 +30,37 @@
   .btn.red{background:linear-gradient(135deg,#EF4444,#DC2626)}
   .btn.purple{background:linear-gradient(135deg,#A855F7,#7C3AED)}
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:#E6EDF3}
-  
-  /* Grid de botões */
-  .grid2{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .grid2 .btn{margin-bottom:0}
-  
-  /* Lista de itens */
-  .item-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:8px;
-    padding:6px 0;
-    font-size:12px;
-    border-bottom:1px dashed rgba(255,255,255,.05);
-  }
+  .item-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px dashed rgba(255,255,255,.05)}
   .item-row:last-child{border-bottom:none}
-  .item-row .nome{
-    flex:1;
-    word-wrap:break-word;
-    overflow-wrap:break-word;
-  }
-  .item-row .qtd{
-    color:#00E676;
-    font-weight:700;
-    white-space:nowrap;
-  }
-  
-  /* Linha de valor */
-  .valor-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:8px 0;
-    font-size:13px;
-  }
+  .item-row .nome{flex:1;word-wrap:break-word;overflow-wrap:break-word}
+  .item-row .qtd{color:#00E676;font-weight:700;white-space:nowrap}
+  .valor-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px}
   .valor-row .label{color:#8B98A5}
   .valor-row .valor{color:#00E676;font-weight:700}
-  
-  /* Status do GPS */
-  .gps-status{
-    margin-top:8px;
-    padding:8px;
-    background:rgba(59,130,246,.1);
-    border:1px solid rgba(59,130,246,.3);
-    border-radius:8px;
-    font-size:11px;
-    color:#3B82F6;
-    text-align:center;
-    word-wrap:break-word;
-  }
-  .gps-status.on{
-    background:rgba(0,230,118,.1);
-    border-color:rgba(0,230,118,.3);
-    color:#00E676;
-  }
-  
-  /* Observações */
-  .obs{
-    margin-top:8px;
-    padding:8px;
-    background:rgba(245,158,11,.08);
-    border-radius:8px;
-    font-size:12px;
-    color:#EBD9B4;
-    word-wrap:break-word;
-  }
-  
-  /* Login */
-  .login{
-    max-width:100%;
-    width:100%;
-    margin:60px auto 0;
-    padding:0 12px;
-  }
-  .login-card{
-    background:#0F1720;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:16px;
-    padding:20px;
-  }
-  .login h2{
-    text-align:center;
-    font-size:20px;
-    margin-bottom:16px;
-  }
-  .login label{
-    display:block;
-    font-size:10px;
-    color:#8B98A5;
-    text-transform:uppercase;
-    letter-spacing:.8px;
-    margin:12px 0 4px;
-    font-weight:700;
-  }
-  .login input{
-    width:100%;
-    padding:12px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,.07);
-    background:rgba(255,255,255,.04);
-    color:#E6EDF3;
-    font-size:16px; /* Evita zoom no iOS */
-    outline:none;
-    font-family:inherit;
-  }
+  .gps-status{margin-top:8px;padding:8px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;font-size:11px;color:#3B82F6;text-align:center;word-wrap:break-word}
+  .gps-status.on{background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.3);color:#00E676}
+  .obs{margin-top:8px;padding:8px;background:rgba(245,158,11,.08);border-radius:8px;font-size:12px;color:#EBD9B4;word-wrap:break-word}
+  .login{max-width:100%;width:100%;margin:60px auto 0;padding:0 12px}
+  .login-card{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px}
+  .login h2{text-align:center;font-size:20px;margin-bottom:16px}
+  .login label{display:block;font-size:10px;color:#8B98A5;text-transform:uppercase;letter-spacing:.8px;margin:12px 0 4px;font-weight:700}
+  .login input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04);color:#E6EDF3;font-size:16px;outline:none;font-family:inherit}
   .login input:focus{border-color:#00E676}
-  
-  /* Estado vazio */
-  .state{
-    text-align:center;
-    padding:30px 12px;
-  }
+  .state{text-align:center;padding:30px 12px}
   .state .big{font-size:40px;margin-bottom:10px}
   .state b{font-size:16px}
   .state p{margin-top:6px;font-size:13px;color:#8B98A5}
-  
-  /* Toast */
-  #toast{
-    position:fixed;
-    bottom:20px;
-    left:50%;
-    transform:translateX(-50%);
-    background:#00E676;
-    color:#000;
-    font-weight:800;
-    font-size:12px;
-    padding:10px 18px;
-    border-radius:999px;
-    opacity:0;
-    transition:opacity .3s;
-    z-index:999;
-    max-width:90vw;
-    text-align:center;
-    pointer-events:none;
-  }
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#00E676;color:#000;font-weight:800;font-size:12px;padding:10px 18px;border-radius:999px;opacity:0;transition:opacity .3s;z-index:999;max-width:90vw;text-align:center;pointer-events:none}
   #toast.show{opacity:1}
   #toast.err{background:#EF4444;color:#fff}
-  
-  /* Modal de navegação */
-  .modal-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.9);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:99990;
-    padding:16px;
-  }
-  .modal{
-    background:#0F1720;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:16px;
-    padding:20px;
-    width:100%;
-    max-width:360px;
-  }
-  .modal h3{
-    margin:0 0 12px;
-    font-size:16px;
-    color:#3B82F6;
-  }
-  .modal p{
-    margin-bottom:12px;
-    color:#8B98A5;
-    font-size:12px;
-    word-wrap:break-word;
-  }
-  
-  /* Media queries para telas maiores */
-  @media (min-width:480px){
-    .wrap{max-width:480px;padding:70px 16px 20px}
-    .card{padding:16px}
-    .addr{font-size:15px}
-    .btn{font-size:14px;min-height:50px}
-  }
-  @media (min-width:768px){
-    .wrap{max-width:560px}
-  }
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:99990;padding:16px}
+  .modal{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;width:100%;max-width:360px}
+  .modal h3{margin:0 0 12px;font-size:16px;color:#3B82F6}
+  .modal p{margin-bottom:12px;color:#8B98A5;font-size:12px;word-wrap:break-word}
+  @media (min-width:480px){.wrap{max-width:480px;padding:70px 16px 20px}.card{padding:16px}.addr{font-size:15px}.btn{font-size:14px;min-height:50px}}
+  @media (min-width:768px){.wrap{max-width:560px}}
 </style>
 </head>
 <body>
@@ -341,9 +81,10 @@ let sessao = null;
 let entregas = [];
 let watchId = null;
 let posicaoAtual = null;
+let intervaloId = null;
+let ultimaAssinatura = '';
 
 const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return'h'+h.toString(36);}
 
 const toast = (msg,err) => {
@@ -371,26 +112,48 @@ async function login(user, pass){
   return {ok:true, ent};
 }
 
-function salvarSessao(ent){
-  sessao = {id:ent.id, nome:ent.nome};
-  localStorage.setItem(KEY, JSON.stringify(sessao));
+function salvarSessao(ent){ sessao={id:ent.id,nome:ent.nome}; localStorage.setItem(KEY,JSON.stringify(sessao)); }
+function carregarSessao(){ try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;} }
+
+// ✅ Polling único (não duplica mais)
+function iniciarPolling(){
+  if(intervaloId) clearInterval(intervaloId);
+  intervaloId = setInterval(carregarEntregas, 10000);
 }
 
-function carregarSessao(){
-  try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}
-}
-
+// ✅ Só re-renderiza se algo mudou de verdade (sem travamentos)
 async function carregarEntregas(){
   if(!sessao) return;
-  const r = await api('/entregas.json','GET');
-  const d = await r.json();
-  if(!d){entregas=[];render();return;}
-  const lista = Object.entries(d).map(([token,v])=>({token,...v}));
-  entregas = lista.filter(e => 
-    e.entregadorId === sessao.id && 
-    !['entregue','cancelada','recusada'].includes(e.status)
-  );
-  render();
+  try{
+    const r = await api('/entregas.json','GET');
+    const d = await r.json();
+    const lista = d ? Object.entries(d).map(([token,v])=>({token,...v})) : [];
+    const novas = lista.filter(e =>
+      e.entregadorId === sessao.id &&
+      !['entregue','cancelada','recusada'].includes(e.status)
+    );
+    const assinatura = JSON.stringify(novas.map(e=>e.token+'|'+e.status));
+    entregas = novas;
+    if(assinatura !== ultimaAssinatura){
+      ultimaAssinatura = assinatura;
+      render();
+    } else {
+      atualizarVisualGps();
+    }
+  }catch(e){}
+}
+
+// ✅ Atualiza só a linha de status do GPS, sem recriar a tela
+function atualizarVisualGps(){
+  document.querySelectorAll('.gps-status').forEach(el => {
+    if(posicaoAtual){
+      el.className = 'gps-status on';
+      el.textContent = '🛰️ GPS ATIVO: ' + posicaoAtual.lat.toFixed(5) + ', ' + posicaoAtual.lng.toFixed(5);
+    } else {
+      el.className = 'gps-status';
+      el.textContent = '⚠️ GPS inativo - Clique em "Iniciar rota"';
+    }
+  });
 }
 
 function renderLogin(erro){
@@ -417,8 +180,9 @@ function renderLogin(erro){
       salvarSessao(res.ent);
       toast('✅ Bem-vindo, '+res.ent.nome);
       document.getElementById('topbar').style.display = 'flex';
+      ultimaAssinatura = '';
       carregarEntregas();
-      setInterval(carregarEntregas, 10000);
+      iniciarPolling();
     } else {
       renderLogin(res.erro);
     }
@@ -427,14 +191,10 @@ function renderLogin(erro){
 
 function render(){
   const app = document.getElementById('app');
-  
-  if(!sessao){
-    renderLogin();
-    return;
-  }
-  
+  if(!sessao){ renderLogin(); return; }
+
   let html = '<div class="wrap">';
-  
+
   if(entregas.length === 0){
     html += '<div class="card"><div class="state"><div class="big">📭</div><b>Olá, '+esc(sessao.nome)+'!</b><p>Nenhuma entrega ativa no momento.</p></div></div>';
   } else {
@@ -445,7 +205,7 @@ function render(){
         em_rota: {txt:'🛵 Em rota', cor:'#00E676', bg:'rgba(0,230,118,.14)'}
       };
       const st = statusColors[e.status] || statusColors.aguardando;
-      
+
       let botoes = '';
       if(e.status === 'aguardando'){
         botoes = `
@@ -457,11 +217,11 @@ function render(){
       } else if(e.status === 'em_rota'){
         botoes = `<button class="btn gold" onclick="confirmar('${e.token}')">📦 Confirmar entrega</button>`;
       }
-      
+
       const itens = Array.isArray(e.itens) && e.itens.length > 0
         ? '<div class="lbl">📦 Itens ('+e.itens.length+')</div>' + e.itens.map(it=>'<div class="item-row"><span class="nome">'+(it.tipo==='servico'?'🔧 ':'📦 ')+esc(it.nome)+'</span><span class="qtd">x'+it.quantidade+'</span></div>').join('')
         : '';
-      
+
       html += `
         <div class="card">
           <div class="pill" style="color:${st.cor};background:${st.bg}">${st.txt}</div>
@@ -476,7 +236,7 @@ function render(){
             <span class="valor">R$ ${(parseFloat(e.valor)||0).toFixed(2)}</span>
           </div>
           <div style="margin-top:10px">${botoes}`;
-      
+
       if(e.endereco){
         const tel = String(e.telefone||'').replace(/\D/g,'');
         const encoded = encodeURIComponent(e.endereco);
@@ -485,57 +245,58 @@ function render(){
         html += '<button class="btn purple" onclick="navegar(\''+encoded+'\')">🗺️ Navegar</button>';
         html += '</div>';
       }
-      
-      if(posicaoAtual){
-        html += '<div class="gps-status on">🛰️ GPS ATIVO: '+posicaoAtual.lat.toFixed(5)+', '+posicaoAtual.lng.toFixed(5)+'</div>';
-      } else {
-        html += '<div class="gps-status">⚠️ GPS inativo - Clique em "Iniciar rota"</div>';
-      }
-      
+
+      html += posicaoAtual
+        ? '<div class="gps-status on">🛰️ GPS ATIVO: '+posicaoAtual.lat.toFixed(5)+', '+posicaoAtual.lng.toFixed(5)+'</div>'
+        : '<div class="gps-status">⚠️ GPS inativo - Clique em "Iniciar rota"</div>';
+
       html += '</div></div>';
     });
   }
-  
+
   html += '<button class="btn red" onclick="sair()" style="margin-top:12px">🚪 Sair</button>';
   html += '</div>';
-  
   app.innerHTML = html;
 }
 
 window.aceitar = async (token) => {
   await api('/entregas/'+encodeURIComponent(token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString()});
-  toast('✅ Entrega aceita! Clique em "Iniciar rota".');
-  setTimeout(carregarEntregas, 500);
+  toast('✅ Entrega aceita!');
+  await carregarEntregas();
 };
 
 window.recusar = async (token) => {
   if(!confirm('Recusar esta entrega?')) return;
   await api('/entregas/'+encodeURIComponent(token)+'.json','PATCH',{status:'recusada',recusadaEm:new Date().toISOString()});
   toast('🚫 Entrega recusada');
-  setTimeout(carregarEntregas, 500);
+  await carregarEntregas();
 };
 
 window.iniciarRota = async (token) => {
-  toast('⏳ Ativando GPS...');
-  const gpsOk = await ativarGPS();
-  if(!gpsOk){
-    toast('❌ GPS não ativou. Verifique as permissões.', true);
-    return;
+  if(!posicaoAtual){
+    toast('⏳ Ativando GPS...');
+    const ok = await ativarGPS(false);
+    if(!ok){ toast('❌ GPS não ativou. Verifique as permissões.', true); return; }
   }
   await api('/entregas/'+encodeURIComponent(token)+'.json','PATCH',{status:'em_rota',rotaIniciadaEm:new Date().toISOString()});
-  toast('🛵 Rota iniciada! GPS ativo.');
-  setTimeout(carregarEntregas, 500);
+  toast('🛵 Rota iniciada!');
+  await carregarEntregas();
 };
 
+// ✅ CORREÇÃO: só desliga o GPS se NÃO houver mais entregas ativas
 window.confirmar = async (token) => {
   if(!confirm('Confirmar entrega?')) return;
   await api('/entregas/'+encodeURIComponent(token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString()});
-  if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
-  posicaoAtual = null;
-  const badge = document.getElementById('gpsBadge');
-  if(badge){badge.className='gps';badge.textContent='GPS OFF';}
   toast('📦 Entrega confirmada!');
-  setTimeout(carregarEntregas, 500);
+  await carregarEntregas();
+
+  const aindaAtivas = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
+  if(aindaAtivas){
+    toast('🛰️ GPS segue ativo para as demais entregas.');
+  } else {
+    pararGPS();
+    toast('🏁 Todas concluídas. GPS desligado.');
+  }
 };
 
 window.navegar = (endereco) => {
@@ -546,7 +307,7 @@ window.navegar = (endereco) => {
   const app = document.getElementById('app');
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
-  modal.innerHTML = '<div class="modal"><h3>🗺️ Escolha o app</h3><p>'+esc(decodeURIComponent(endereco))+'</p>' + 
+  modal.innerHTML = '<div class="modal"><h3>🗺️ Escolha o app</h3><p>'+esc(decodeURIComponent(endereco))+'</p>' +
     apps.map(a => '<button class="btn" style="background:'+a.color+';color:'+a.txtColor+'" onclick="window.open(\''+a.url+'\',\'_blank\');this.closest(\'.modal-overlay\').remove()">'+a.name+'</button>').join('') +
     '<button class="btn ghost" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button></div>';
   app.appendChild(modal);
@@ -557,51 +318,57 @@ window.sair = () => {
   if(confirm('Sair da conta?')){
     sessao = null;
     localStorage.removeItem(KEY);
-    if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
-    posicaoAtual = null;
+    pararGPS();
+    if(intervaloId){clearInterval(intervaloId);intervaloId=null;}
+    ultimaAssinatura = '';
     renderLogin();
   }
 };
 
-async function ativarGPS(){
-  if(!('geolocation' in navigator)){
-    console.error('Navegador não suporta geolocation');
-    return false;
-  }
-  
+async function ativarGPS(silencioso){
+  if(!('geolocation' in navigator)) return false;
+  if(posicaoAtual && watchId !== null) return true;
+
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         posicaoAtual = {lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy};
-        console.log('GPS ativado:', posicaoAtual);
-        
         const badge = document.getElementById('gpsBadge');
         if(badge){badge.className='gps on';badge.textContent='GPS ON';}
-        
+
         if(watchId) navigator.geolocation.clearWatch(watchId);
         watchId = navigator.geolocation.watchPosition(
           (p) => {
             posicaoAtual = {lat:p.coords.latitude, lng:p.coords.longitude, accuracy:p.coords.accuracy};
             transmitirPosicao(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed);
+            atualizarVisualGps();
           },
-          (err) => console.error('Erro watchPosition:', err),
+          (err) => console.error('watchPosition erro:', err),
           {enableHighAccuracy:true, timeout:15000, maximumAge:3000}
         );
-        
+        if(!silencioso) toast('✅ GPS ativado!');
+        atualizarVisualGps();
         resolve(true);
       },
       (err) => {
-        console.error('Erro getCurrentPosition:', err);
         let msg = 'Erro no GPS';
         if(err.code===1) msg='Permissão negada';
         if(err.code===2) msg='Localização indisponível';
         if(err.code===3) msg='Timeout';
-        toast('❌ '+msg, true);
+        if(!silencioso) toast('❌ '+msg, true);
         resolve(false);
       },
       {enableHighAccuracy:true, timeout:20000, maximumAge:0}
     );
   });
+}
+
+function pararGPS(){
+  if(watchId !== null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  posicaoAtual = null;
+  const badge = document.getElementById('gpsBadge');
+  if(badge){badge.className='gps';badge.textContent='GPS OFF';}
+  atualizarVisualGps();
 }
 
 function transmitirPosicao(lat, lng, acc, speed){
@@ -610,21 +377,25 @@ function transmitirPosicao(lat, lng, acc, speed){
       api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{
         lat, lng, precisao:Math.round(acc||0), velocidade:Math.round((speed||0)*3.6),
         timestamp:new Date().toISOString(), entregadorId:sessao.id
-      }).catch(err => console.error('Erro ao transmitir:', err));
+      }).catch(()=>{});
     }
   });
 }
 
-// INIT
-const s = carregarSessao();
-if(s){
-  sessao = s;
-  document.getElementById('topbar').style.display = 'flex';
-  carregarEntregas();
-  setInterval(carregarEntregas, 10000);
-} else {
-  renderLogin();
-}
+// ✅ INIT: se recarregar a página no meio da rota, o GPS reativa sozinho
+(async function init(){
+  const s = carregarSessao();
+  if(s){
+    sessao = s;
+    document.getElementById('topbar').style.display = 'flex';
+    await carregarEntregas();
+    iniciarPolling();
+    const temRotaAtiva = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
+    if(temRotaAtiva) ativarGPS(true);
+  } else {
+    renderLogin();
+  }
+})();
 </script>
 </body>
 </html>
