@@ -117,7 +117,7 @@
   const toast = (msg, err) => { const t=document.getElementById('toast'); t.textContent=msg; t.className=err?'show err':'show'; setTimeout(()=>t.className='',3000); };
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
-    aceita:     { txt:' Aceita — pronta para rota', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
+    aceita:     { txt:' Aceita — GPS ativo', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
     em_rota:    { txt:' Em rota — GPS transmitindo', cor:'#00E676', bg:'rgba(0,230,118,.14)' },
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
@@ -235,7 +235,7 @@
     
     // Geocodifica o destino
     if(e.endereco){
-      console.log('📍 Geocodificando endereço:', e.endereco);
+      console.log(' Geocodificando endereço:', e.endereco);
       geocodificarEndereco(e.endereco).then(coords=>{
         if(coords){
           console.log('✅ Endereço geocodificado:', coords);
@@ -249,12 +249,12 @@
         const loading=document.getElementById('mapa-loading-'+e.token);
         if(loading) loading.style.display='none';
       }).catch(err=>{
-        console.error(' Erro ao geocodificar:', err);
+        console.error('❌ Erro ao geocodificar:', err);
         const loading=document.getElementById('mapa-loading-'+e.token);
         if(loading) loading.innerHTML='❌ Erro ao carregar mapa';
       });
     } else {
-      console.log('️ Sem endereço');
+      console.log('⚠️ Sem endereço');
       const loading=document.getElementById('mapa-loading-'+e.token);
       if(loading) loading.innerHTML='📍 Sem endereço';
     }
@@ -279,15 +279,15 @@
 
   function adicionarDestinoNoMapa(e,coords){
     const m=mapas[e.token]; if(!m)return;
-    m.marcadorDestino=L.marker([coords.lat,coords.lng],{icon:L.divIcon({html:'<div style="font-size:30px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(m.mapa).bindPopup(`<b>📍 Destino</b><br/>${esc(e.cliente)}<br/>${esc(e.endereco)}`);
+    m.marcadorDestino=L.marker([coords.lat,coords.lng],{icon:L.divIcon({html:'<div style="font-size:30px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(m.mapa).bindPopup(`<b> Destino</b><br/>${esc(e.cliente)}<br/>${esc(e.endereco)}`);
   }
 
   function atualizarPosicaoNoMapa(e,pos){
     const m=mapas[e.token]; if(!m)return;
-    const iconeMoto=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
+    const iconeMoto=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"></div>',className:'',iconSize:[32,32],iconAnchor:[16,16]});
     if(!m.marcadorMoto){
       m.marcadorMoto=L.marker([pos.lat,pos.lng],{icon:iconeMoto}).addTo(m.mapa).bindPopup('<b>🛵 Você está aqui</b>');
-      console.log(' Pino do entregador adicionado');
+      console.log('🛵 Pino do entregador adicionado');
     } else {
       m.marcadorMoto.setLatLng([pos.lat,pos.lng]);
     }
@@ -300,7 +300,7 @@
     div.className='entrega-item'; div.dataset.token=e.token; div.id='card-'+e.token;
     let acaoHtml='';
     if(e.status==='aguardando')acaoHtml='<button class="btn primary" id="btn-acao-'+e.token+'">✅ Aceitar entrega</button>';
-    else if(e.status==='aceita')acaoHtml='<button class="btn blue" id="btn-acao-'+e.token+'">🛵 Iniciar rota</button>';
+    else if(e.status==='aceita')acaoHtml='<button class="btn blue" id="btn-acao-'+e.token+'"> Iniciar rota</button>';
     else if(e.status==='em_rota')acaoHtml='<button class="btn gold" id="btn-acao-'+e.token+'">📦 Confirmar entrega</button>';
     const itensHtml=Array.isArray(e.itens)&&e.itens.length>0?'<div class="lbl" style="margin-top:10px">📦 O que levar ('+e.itens.length+' itens)</div><div style="margin-top:6px">'+e.itens.map(it=>'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>'+(it.tipo==='servico'?' ':'📦 ')+esc(it.nome)+'</span><span style="color:var(--green);font-weight:700">x'+it.quantidade+'</span></div>').join('')+'</div>':'';
     div.innerHTML=`
@@ -310,7 +310,7 @@
       </div>
       <div class="lbl">Cliente</div>
       <div class="addr">👤 ${esc(e.cliente)||'—'}</div>
-      ${e.endereco?'<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr"> '+esc(e.endereco)+'</div>':'<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
+      ${e.endereco?'<div class="lbl" style="margin-top:10px">Endereço de entrega</div><div class="addr">📍 '+esc(e.endereco)+'</div>':'<p style="margin-top:8px;font-size:12px;color:var(--mut)">Sem endereço — combine por telefone.</p>'}
       ${itensHtml}
       ${e.observacoes?'<div style="margin-top:10px;padding:12px;background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.35);border-radius:12px;font-size:13px;color:#EBD9B4">📝 '+esc(e.observacoes)+'</div>':''}
       <div class="mapa-box" id="mapa-${e.token}"><div class="mapa-loading" id="mapa-loading-${e.token}"><div class="spinner"></div><div>Carregando mapa...</div></div></div>
@@ -324,7 +324,7 @@
       </div>
       <div class="gpsbox ${watchId!==null?'':'off'}" id="gpsBox-${e.token}">
         <div class="dot"></div>
-        <div class="t" id="gpsInfo-${e.token}"><b>${watchId!==null?'GPS transmitindo ao vivo':'GPS desligado'}</b>${watchId!==null?'A loja vê sua posição no mapa.':'Ele liga ao iniciar a rota.'}</div>
+        <div class="t" id="gpsInfo-${e.token}"><b>${watchId!==null?'GPS transmitindo ao vivo':'GPS desligado'}</b>${watchId!==null?'A loja vê sua posição no mapa.':'Ele liga ao aceitar a entrega.'}</div>
       </div>`;
     const btnNavegar=div.querySelector('#btn-navegar-'+e.token);
     if(btnNavegar)btnNavegar.onclick=()=>abrirModalNavegacao(e);
@@ -342,7 +342,7 @@
         <h3>🗺️ Escolha o app de navegação</h3>
         <p style="margin-bottom:16px;color:var(--mut);font-size:13px">${esc(e.endereco)}</p>
         <button class="btn" id="btnWaze" style="background:#33CCFF;color:#000;font-weight:800">🚗 Waze</button>
-        <button class="btn" id="btnGoogle" style="background:#4285F4;color:#fff;font-weight:800">️ Google Maps</button>
+        <button class="btn" id="btnGoogle" style="background:#4285F4;color:#fff;font-weight:800">🗺️ Google Maps</button>
         <button class="btn" id="btnFechar" style="margin-top:10px">Cancelar</button>
       </div>`;
     app.appendChild(modal);
@@ -353,23 +353,25 @@
   }
 
   async function executarAcao(e,acao){
-    console.log(' Ação:',acao,'Token:',e.token);
+    console.log('👉 Ação:',acao,'Token:',e.token);
     if(acao==='aceitar'){
-      toast('✅ Entrega aceita!');
-      await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
-    } else if(acao==='rota'){
-      console.log('🛰️ Iniciando GPS...');
+      toast('✅ Entrega aceita! Ativando GPS...');
+      // ATIVA O GPS AUTOMATICAMENTE AO ACEITAR
       if(!('geolocation' in navigator)){toast('❌ GPS não disponível',true);return;}
       const badge=document.getElementById('gpsBadge'); const txt=document.getElementById('gpsTxt');
       if(badge)badge.className='gps on'; if(txt)txt.textContent='GPS ON';
       document.querySelectorAll('.gpsbox').forEach(box=>{box.className='gpsbox';const t=box.querySelector('.t b');if(t)t.textContent='GPS transmitindo ao vivo';});
-      toast('⏳ Solicitando localização...');
       iniciarGPS();
+      await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'aceita',aceitaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+    } else if(acao==='rota'){
+      console.log('️ Iniciando rota...');
+      if(!posicaoAtual){toast(' Aguardando GPS...',true);return;}
+      toast('🛵 Rota iniciada!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'em_rota',rotaIniciadaEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     } else if(acao==='entregar'){
       if(!confirm('Confirmar entrega?'))return;
       pararGPS();
-      toast(' Entrega confirmada!');
+      toast('📦 Entrega confirmada!');
       await api('/entregas/'+encodeURIComponent(e.token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
     }
     setTimeout(carregarEntregas,1000);
@@ -386,7 +388,7 @@
         
         // Atualiza TODOS os mapas com a nova posição
         entregas.forEach(e=>{
-          if(e.status==='em_rota'){
+          if(e.status==='aceita'||e.status==='em_rota'){
             api('/posicoes/'+encodeURIComponent(e.token)+'.json','PUT',{lat:latitude,lng:longitude,precisao:Math.round(accuracy||0),velocidade:Math.round((speed||0)*3.6),timestamp:new Date().toISOString()}).catch(()=>{});
             atualizarPosicaoNoMapa(e,posicaoAtual);
             // Centraliza o mapa na posição do entregador
