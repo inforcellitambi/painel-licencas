@@ -40,9 +40,6 @@
   .btn.nav{background:linear-gradient(135deg,#8B5CF6,#7C3AED);border-color:transparent;color:#fff}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .gps-info{margin-top:10px;padding:12px;border-radius:12px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25);font-size:12px;color:var(--mut)}
-  .gps-info b{color:var(--txt);display:block;font-size:13px;margin-bottom:4px}
-  .gps-info.error{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25);color:#FCA5A5}
   .state{text-align:center;padding:34px 12px}
   .state .big{font-size:46px;margin-bottom:12px}
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:120;background:rgba(0,230,118,.95);color:#04140B;font-weight:800;font-size:13px;padding:12px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s ease;max-width:90vw;text-align:center}
@@ -65,6 +62,64 @@
   .modal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:400px}
   .modal h3{margin:0 0 16px;font-size:18px;color:var(--blue)}
   .modal .btn{margin-bottom:10px}
+  
+  /* 🆕 PAINEL DE DIAGNÓSTICO GPS */
+  .gps-diagnostico{
+    background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:18px;
+    margin-bottom:12px;
+    box-shadow:0 14px 34px rgba(0,0,0,.35);
+  }
+  .gps-diagnostico h4{
+    font-size:14px;
+    font-weight:800;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .gps-diagnostico h4 .status-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--mut);
+    transition:background .3s;
+  }
+  .gps-diagnostico h4 .status-dot.on{background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.6);animation:live 1.6s infinite}
+  .gps-diagnostico h4 .status-dot.error{background:var(--red)}
+  .gps-log{
+    background:#070B0F;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px;
+    font:12px/1.6 var(--mono);
+    max-height:180px;
+    overflow-y:auto;
+    color:#9CA3AF;
+  }
+  .gps-log .log-entry{
+    padding:4px 0;
+    border-bottom:1px dashed rgba(255,255,255,.05);
+    display:flex;
+    gap:8px;
+  }
+  .gps-log .log-entry:last-child{border-bottom:none}
+  .gps-log .log-time{color:#6B7280;flex-shrink:0}
+  .gps-log .log-msg{color:#E5E7EB}
+  .gps-log .log-entry.success .log-msg{color:var(--green)}
+  .gps-log .log-entry.error .log-msg{color:var(--red)}
+  .gps-log .log-entry.info .log-msg{color:var(--blue)}
+  .gps-coords{
+    margin-top:10px;
+    padding:10px;
+    background:rgba(0,230,118,.08);
+    border:1px solid rgba(0,230,118,.3);
+    border-radius:8px;
+    font:12px var(--mono);
+    color:var(--green);
+    display:none;
+  }
+  .gps-coords.visible{display:block}
 </style>
 </head>
 <body>
@@ -104,12 +159,14 @@
   let watchId = null;
   let posicaoAtual = null;
   let gpsAtivo = false;
+  let gpsLogs = [];
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width:100%;height:100%"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E676"/><stop offset="100%" stop-color="#00B25A"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg2)"/><path d="M20 62 L32 62 L40 44 L60 44 L68 62 L82 62" stroke="#070B0F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="33" cy="67" r="8" fill="#070B0F"/><circle cx="67" cy="67" r="8" fill="#070B0F"/><rect x="45" y="32" width="10" height="12" rx="3" fill="#070B0F"/><circle cx="50" cy="38" r="2" fill="#00E676"/></svg>`;
 
   function hashSenha(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return 'h'+h.toString(36); }
   const toast = (msg, err) => { const t=document.getElementById('toast'); t.textContent=msg; t.className=err?'show err':'show'; setTimeout(()=>t.className='',3000); };
+  
   const STATUS = {
     aguardando: { txt:'⏳ Aguardando você aceitar', cor:'#FACC15', bg:'rgba(250,204,21,.14)' },
     aceita:     { txt:'👍 Aceita — GPS ativo', cor:'#3B82F6', bg:'rgba(59,130,246,.14)' },
@@ -117,6 +174,47 @@
     entregue:   { txt:'✅ Entrega concluída', cor:'#9CA3AF', bg:'rgba(156,163,175,.14)' },
     cancelada:  { txt:'❌ Cancelada pela loja', cor:'#EF4444', bg:'rgba(239,68,68,.14)' },
   };
+
+  // 🆕 Sistema de logs visuais
+  function addGpsLog(msg, type='info'){
+    const now = new Date();
+    const time = now.toLocaleTimeString('pt-BR');
+    gpsLogs.unshift({time, msg, type});
+    if(gpsLogs.length > 20) gpsLogs.pop();
+    renderGpsDiagnostico();
+  }
+
+  function renderGpsDiagnostico(){
+    const container = document.getElementById('gps-diagnostico-container');
+    if(!container) return;
+    
+    const statusDot = document.getElementById('gps-status-dot');
+    if(statusDot){
+      statusDot.className = 'status-dot' + (gpsAtivo ? ' on' : (gpsLogs.some(l=>l.type==='error') ? ' error' : ''));
+    }
+    
+    const logContainer = document.getElementById('gps-log-container');
+    if(logContainer){
+      logContainer.innerHTML = gpsLogs.map(l => 
+        `<div class="log-entry ${l.type}">
+          <span class="log-time">${l.time}</span>
+          <span class="log-msg">${esc(l.msg)}</span>
+        </div>`
+      ).join('');
+    }
+    
+    const coordsContainer = document.getElementById('gps-coords');
+    if(coordsContainer && posicaoAtual){
+      coordsContainer.className = 'gps-coords visible';
+      coordsContainer.innerHTML = `
+        <b>📍 Última posição recebida:</b><br/>
+        Lat: ${posicaoAtual.lat.toFixed(6)}<br/>
+        Lng: ${posicaoAtual.lng.toFixed(6)}<br/>
+        Precisão: ${posicaoAtual.accuracy || '?'}m<br/>
+        Timestamp: ${posicaoAtual.timestamp || '?'}
+      `;
+    }
+  }
 
   async function api(path, method, body){
     const opts = { method, headers:{'Content-Type':'application/json'} };
@@ -166,7 +264,7 @@
           <label>Senha</label>
           <input id="inpSenha" type="password" placeholder="••••" />
           ${erro?'<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:10px;font-size:12px;color:#FCA5A5;text-align:center">'+esc(erro)+'</div>':''}
-          <button class="btn primary" id="btnEntrar" style="margin-top:22px"> Entrar</button>
+          <button class="btn primary" id="btnEntrar" style="margin-top:22px">🔐 Entrar</button>
         </div>
       </div>`;
     document.getElementById('btnEntrar').onclick=async()=>{
@@ -174,24 +272,75 @@
       const senha=document.getElementById('inpSenha').value;
       if(!login||!senha){toast('Preencha login e senha',true);return;}
       const res=await tentarLogin(login,senha);
-      if(res.ok){ salvarSessao(res.ent); toast('✅ Bem-vindo, '+res.ent.nome+'!'); renderApp(); carregarEntregas(); setInterval(carregarEntregas,10000); }
+      if(res.ok){ 
+        salvarSessao(res.ent); 
+        toast('✅ Bem-vindo, '+res.ent.nome+'!'); 
+        renderApp(); 
+        carregarEntregas(); 
+        setInterval(carregarEntregas,10000); 
+      }
       else renderLogin(res.erro);
     };
     document.getElementById('inpSenha').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('btnEntrar').click();});
   }
 
-  function renderApp(){ document.getElementById('topbar').style.display='flex'; renderLista(); }
+  function renderApp(){ 
+    document.getElementById('topbar').style.display='flex'; 
+    renderLista(); 
+  }
 
   function renderLista(){
     const app=document.getElementById('app');
     if(entregas.length===0){
-      app.innerHTML=`<div class="wrap"><div class="card"><div class="state"><div class="logo-grande" style="width:80px;height:80px;margin:0 auto 14px">${LOGO_SVG}</div><b>Olá, ${esc(sessao.nome)}!</b><p style="margin-top:8px;color:var(--mut)">Você não tem entregas ativas no momento.</p></div></div><button class="btn red" id="btnSair">🚪 Sair da conta</button></div>`;
+      app.innerHTML=`
+        <div class="wrap">
+          <div id="gps-diagnostico-container"></div>
+          <div class="card">
+            <div class="state">
+              <div class="logo-grande" style="width:80px;height:80px;margin:0 auto 14px">${LOGO_SVG}</div>
+              <b>Olá, ${esc(sessao.nome)}!</b>
+              <p style="margin-top:8px;color:var(--mut)">Você não tem entregas ativas no momento.</p>
+            </div>
+          </div>
+          <button class="btn red" id="btnSair"> Sair da conta</button>
+        </div>`;
     } else {
-      app.innerHTML=`<div class="wrap" id="listaEntregas"></div><button class="btn red" id="btnSair" style="max-width:560px;margin:0 auto">🚪 Sair da conta</button>`;
+      app.innerHTML=`
+        <div class="wrap">
+          <div id="gps-diagnostico-container"></div>
+          <div id="listaEntregas"></div>
+          <button class="btn red" id="btnSair" style="max-width:560px;margin:0 auto">🚪 Sair da conta</button>
+        </div>`;
       const lista=document.getElementById('listaEntregas');
       entregas.forEach(e=>lista.appendChild(criarCardEntrega(e)));
     }
+    
+    // Renderiza o painel de diagnóstico GPS
+    renderGpsDiagnosticoFull();
+    
     document.getElementById('btnSair').onclick=()=>{if(confirm('Deseja sair?')){limparSessao();renderLogin();}};
+  }
+
+  function renderGpsDiagnosticoFull(){
+    const container = document.getElementById('gps-diagnostico-container');
+    if(!container) return;
+    
+    const statusText = gpsAtivo ? 'GPS ATIVO' : (gpsLogs.some(l=>l.type==='error') ? 'ERRO NO GPS' : 'GPS INATIVO');
+    const statusClass = gpsAtivo ? 'on' : (gpsLogs.some(l=>l.type==='error') ? 'error' : '');
+    
+    container.innerHTML = `
+      <div class="gps-diagnostico">
+        <h4>
+          <div class="status-dot ${statusClass}" id="gps-status-dot"></div>
+          🛰️ Diagnóstico GPS: ${statusText}
+        </h4>
+        <div class="gps-log" id="gps-log-container">
+          ${gpsLogs.length === 0 ? '<div class="log-entry info"><span class="log-time">--:--:--</span><span class="log-msg">Aguardando ativação do GPS...</span></div>' : ''}
+        </div>
+        <div class="gps-coords" id="gps-coords"></div>
+      </div>
+    `;
+    renderGpsDiagnostico();
   }
 
   function atualizarStatusCards(){
@@ -205,17 +354,6 @@
         else if(e.status==='aceita'){novo.className='btn blue';novo.innerHTML='🛵 Iniciar rota';novo.onclick=()=>executarAcao(e,'rota');}
         else if(e.status==='em_rota'){novo.className='btn gold';novo.innerHTML='📦 Confirmar entrega';novo.onclick=()=>executarAcao(e,'entregar');}
       }
-      // Atualiza info do GPS
-      const gpsInfo=document.getElementById('gps-info-'+e.token);
-      if(gpsInfo){
-        if(gpsAtivo && posicaoAtual){
-          gpsInfo.className='gps-info';
-          gpsInfo.innerHTML=`<b>🛰️ GPS ativo</b>Transmitindo posição: ${posicaoAtual.lat.toFixed(5)}, ${posicaoAtual.lng.toFixed(5)}`;
-        } else {
-          gpsInfo.className='gps-info error';
-          gpsInfo.innerHTML=`<b>⚠️ GPS inativo</b>Aguardando ativação...`;
-        }
-      }
     });
   }
 
@@ -226,7 +364,7 @@
     div.className='entrega-item'; div.dataset.token=e.token; div.id='card-'+e.token;
     let acaoHtml='';
     if(e.status==='aguardando')acaoHtml='<button class="btn primary" id="btn-acao-'+e.token+'">✅ Aceitar entrega</button>';
-    else if(e.status==='aceita')acaoHtml='<button class="btn blue" id="btn-acao-'+e.token+'"> Iniciar rota</button>';
+    else if(e.status==='aceita')acaoHtml='<button class="btn blue" id="btn-acao-'+e.token+'">🛵 Iniciar rota</button>';
     else if(e.status==='em_rota')acaoHtml='<button class="btn gold" id="btn-acao-'+e.token+'">📦 Confirmar entrega</button>';
     const itensHtml=Array.isArray(e.itens)&&e.itens.length>0?'<div class="lbl" style="margin-top:10px">📦 O que levar ('+e.itens.length+' itens)</div><div style="margin-top:6px">'+e.itens.map(it=>'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px"><span>'+(it.tipo==='servico'?' ':'📦 ')+esc(it.nome)+'</span><span style="color:var(--green);font-weight:700">x'+it.quantidade+'</span></div>').join('')+'</div>':'';
     div.innerHTML=`
@@ -243,11 +381,8 @@
         <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:14px"><span style="color:var(--mut)">Valor a receber</span><span style="font-weight:600;color:var(--green)">R$ ${(parseFloat(e.valor)||0).toFixed(2)}</span></div>
         <div style="display:flex;justify-content:space-between;padding:9px 0;font-size:14px"><span style="color:var(--mut)">Telefone</span><span style="font-weight:600">${esc(e.telefone)||'—'}</span></div>
       </div>
-      <div class="gps-info" id="gps-info-${e.token}">
-        <b>⚠️ GPS inativo</b>Aguardando ativação...
-      </div>
       <div style="margin-top:14px;display:grid;gap:10px">
-        ${tel?'<div class="grid2"><a class="btn" href="tel:'+tel+'" style="min-height:44px;font-size:13px">📞 Ligar</a><button class="btn nav" id="btn-navegar-'+e.token+'" style="min-height:44px;font-size:13px">️ Navegar</button></div>':'<button class="btn nav" id="btn-navegar-'+e.token+'">🗺️ Navegar</button>'}
+        ${tel?'<div class="grid2"><a class="btn" href="tel:'+tel+'" style="min-height:44px;font-size:13px"> Ligar</a><button class="btn nav" id="btn-navegar-'+e.token+'" style="min-height:44px;font-size:13px">🗺️ Navegar</button></div>':'<button class="btn nav" id="btn-navegar-'+e.token+'">️ Navegar</button>'}
         ${acaoHtml}
       </div>`;
     const btnNavegar=div.querySelector('#btn-navegar-'+e.token);
@@ -277,7 +412,6 @@
   }
 
   async function executarAcao(e,acao){
-    console.log('👉 Ação:',acao,'Token:',e.token);
     if(acao==='aceitar'){
       toast('✅ Entrega aceita! Ativando GPS...');
       await ativarGPS();
@@ -295,64 +429,97 @@
     setTimeout(carregarEntregas,1000);
   }
 
-  // ✅ FUNÇÃO PROFISSIONAL DE GPS
+  // ✅ FUNÇÃO PROFISSIONAL DE GPS COM DIAGNÓSTICO COMPLETO
   async function ativarGPS(){
     if(gpsAtivo){
-      console.log('⚠️ GPS já está ativo');
+      addGpsLog('GPS já está ativo, ignorando chamada', 'info');
       return;
     }
 
+    addGpsLog('Iniciando ativação do GPS...', 'info');
+
+    // 1. Verifica se o navegador suporta geolocation
     if(!('geolocation' in navigator)){
-      toast('❌ Este dispositivo não suporta GPS',true);
+      addGpsLog('❌ Navegador NÃO suporta geolocation', 'error');
+      toast('❌ Este navegador não suporta GPS',true);
       return;
     }
+    addGpsLog('✅ Navegador suporta geolocation', 'success');
 
-    console.log('📡 Solicitando permissão de localização...');
-    toast('⏳ Solicitando acesso ao GPS...');
+    // 2. Verifica se é HTTPS (necessário para GPS)
+    const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+    if(!isHttps){
+      addGpsLog('⚠️ Site não está em HTTPS - GPS pode não funcionar', 'error');
+    } else {
+      addGpsLog('✅ Conexão HTTPS detectada', 'success');
+    }
 
-    // Primeiro, testa com getCurrentPosition para garantir que funciona
+    // 3. Tenta obter a posição atual
+    addGpsLog('📡 Solicitando permissão de localização...', 'info');
+    toast(' Solicitando acesso ao GPS...');
+
     try {
       const posicao = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        });
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            addGpsLog('✅ Permissão concedida! Posição obtida', 'success');
+            resolve(pos);
+          },
+          (err) => {
+            let msg = 'Erro desconhecido';
+            if(err.code===1) msg='Permissão NEGADA pelo usuário';
+            if(err.code===2) msg='Localização indisponível (GPS desligado?)';
+            if(err.code===3) msg='Timeout - demorou muito para responder';
+            addGpsLog(`❌ getCurrentPosition falhou: ${msg} (código ${err.code})`, 'error');
+            reject(err);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+          }
+        );
       });
 
-      console.log('✅ Permissão concedida! Posição inicial:', posicao.coords.latitude, posicao.coords.longitude);
+      // 4. Sucesso! Ativa o watchPosition
+      const {latitude, longitude, accuracy} = posicao.coords;
+      posicaoAtual = {lat: latitude, lng: longitude, accuracy, timestamp: new Date().toISOString()};
+      gpsAtivo = true;
       
-      // Agora ativa o watchPosition para monitoramento contínuo
+      addGpsLog(` Primeira posição: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, 'success');
+      addGpsLog(`📊 Precisão: ${accuracy}m`, 'info');
+      addGpsLog('🔄 Ativando monitoramento contínuo (watchPosition)...', 'info');
+
+      // Atualiza UI
+      const badge = document.getElementById('gpsBadge');
+      const txt = document.getElementById('gpsTxt');
+      if(badge) badge.className='gps-status on';
+      if(txt) txt.textContent='GPS ON';
+      
+      renderGpsDiagnostico();
+      atualizarStatusCards();
+
+      // 5. Inicia watchPosition para monitoramento contínuo
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const {latitude, longitude, accuracy, speed} = pos.coords;
-          posicaoAtual = {lat: latitude, lng: longitude};
-          gpsAtivo = true;
+          posicaoAtual = {lat: latitude, lng: longitude, accuracy, speed, timestamp: new Date().toISOString()};
           
-          console.log(' Posição atualizada:', latitude, longitude);
-          
-          // Atualiza UI
-          const badge = document.getElementById('gpsBadge');
-          const txt = document.getElementById('gpsTxt');
-          if(badge){badge.className='gps-status on';}
-          if(txt){txt.textContent='GPS ON';}
+          addGpsLog(`📍 Posição atualizada: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, 'success');
           
           // Transmite para o Firebase
           transmitirPosicao(latitude, longitude, accuracy, speed);
           
-          // Atualiza cards
+          // Atualiza UI
+          renderGpsDiagnostico();
           atualizarStatusCards();
         },
         (err) => {
-          console.error('❌ Erro GPS:', err);
-          let msg = 'Erro no GPS';
-          if(err.code===1) msg='Permissão de localização negada. Verifique as configurações do navegador.';
-          if(err.code===2) msg='Localização indisponível.';
-          if(err.code===3) msg='Tempo esgotado ao buscar localização.';
-          toast('❌ '+msg, true);
-          gpsAtivo = false;
-          const txt = document.getElementById('gpsTxt');
-          if(txt) txt.textContent='GPS OFF';
+          let msg = 'Erro desconhecido';
+          if(err.code===1) msg='Permissão negada';
+          if(err.code===2) msg='Localização indisponível';
+          if(err.code===3) msg='Timeout';
+          addGpsLog(`❌ watchPosition erro: ${msg}`, 'error');
         },
         {
           enableHighAccuracy: true,
@@ -362,10 +529,11 @@
       );
 
       toast('✅ GPS ativado com sucesso!');
+      addGpsLog('✅ GPS totalmente operacional!', 'success');
       
     } catch (err) {
-      console.error('❌ Falha ao ativar GPS:', err);
-      toast('❌ Não foi possível ativar o GPS. Verifique as permissões.', true);
+      addGpsLog(`❌ Falha crítica ao ativar GPS: ${err.message || err}`, 'error');
+      toast('❌ Não foi possível ativar o GPS', true);
     }
   }
 
@@ -381,7 +549,7 @@
           velocidade: Math.round((speed || 0) * 3.6),
           timestamp: new Date().toISOString(),
           entregadorId: sessao.id
-        }).catch(err => console.error('Erro ao transmitir posição:', err));
+        }).catch(err => addGpsLog(`❌ Erro ao transmitir: ${err.message}`, 'error'));
       }
     });
   }
@@ -399,6 +567,8 @@
     if(badge) badge.className='gps-status off';
     if(txt) txt.textContent='GPS OFF';
     
+    addGpsLog('⏹️ GPS parado', 'info');
+    renderGpsDiagnostico();
     atualizarStatusCards();
   }
 
