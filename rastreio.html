@@ -25,6 +25,21 @@
   .row:last-child{border-bottom:none}
   .row .k{color:#8B98A5}
   .row .v{font-weight:700;text-align:right}
+  
+  /* BARRA DE PROGRESSO EM TEMPO REAL */
+  .progress-bar{display:flex;margin:16px 0 8px}
+  .step{flex:1;text-align:center;position:relative}
+  .step .dot{width:14px;height:14px;border-radius:50%;background:#1F2D3A;border:2px solid #1F2D3A;margin:0 auto;position:relative;z-index:2;transition:all .4s}
+  .step .bar{position:absolute;top:6px;left:-50%;width:100%;height:3px;background:#1F2D3A;z-index:1;transition:background .4s}
+  .step:first-child .bar{display:none}
+  .step.done .dot{background:#00E676;border-color:#00E676}
+  .step.done .bar{background:#00E676}
+  .step.current .dot{background:#00E676;border-color:#00E676;box-shadow:0 0 0 5px rgba(0,230,118,.18);animation:pulse 1.6s infinite}
+  .step.current .bar{background:#00E676}
+  .step .label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#6B7280;margin-top:6px}
+  .step.done .label,.step.current .label{color:#00E676}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,230,118,.55)}70%{box-shadow:0 0 0 8px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
+  
   .timeline{margin-top:6px}
   .tl-item{display:flex;gap:10px;padding:6px 0;font-size:13px}
   .tl-dot{width:10px;height:10px;border-radius:50%;background:#1F2D3A;margin-top:5px;flex-shrink:0}
@@ -39,7 +54,6 @@
   .state .big{font-size:44px;margin-bottom:10px}
   #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:16px}
   #lightbox img{max-width:95vw;max-height:92vh;border-radius:12px}
-  /* Rastreio da entrega */
   #rl-card{background:#0F1720;border:1px solid rgba(0,230,118,.35);border-radius:16px;padding:16px;margin-bottom:12px}
   #rl-titulo{font-size:14px;font-weight:800;color:#00E676;margin-bottom:10px}
   #rl-banner{padding:12px;border-radius:12px;font-weight:800;font-size:13px;text-align:center;margin-bottom:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
@@ -98,6 +112,15 @@ const STATUS_COR = {
   'Cancelado':['#EF4444','rgba(239,68,68,.14)']
 };
 
+// Função que calcula qual etapa está ativa
+function calcularEtapa(status){
+  if(['Em Reparo','Aguardando Peça'].includes(status)) return 2;
+  if(['Aguardando Técnico','Em Execução','Laudo Criado'].includes(status)) return 3;
+  if(['Pronto','Pronto p/ Fechamento','Finalizado'].includes(status)) return 4;
+  if(status === 'Entregue') return 5;
+  return 1;
+}
+
 function checklistArr(c){
   if(!c) return [];
   if(Array.isArray(c)) return c;
@@ -112,22 +135,31 @@ function renderOS(){
 
   let html = '';
 
-  // Expirado?
   if(d.expiraEm && new Date(d.expiraEm).getTime() < Date.now()){
     html += '<div class="card state"><div class="big">⌛</div><b>Link expirado</b><p style="margin-top:6px">Fale com a loja para receber um novo acompanhamento.</p></div>';
     sec.innerHTML = html;
     return;
   }
 
-  // Cabeçalho
+  // Cabeçalho + BARRA DE PROGRESSO EM TEMPO REAL
+  const etapa = calcularEtapa(d.status);
+  const nomes = ['Recebida','Em reparo','Na técnica','Pronto','Entregue'];
+  let progressBar = '<div class="progress-bar">';
+  nomes.forEach((nome,i)=>{
+    const num = i+1;
+    const cls = num < etapa ? 'done' : (num === etapa ? 'current' : '');
+    progressBar += `<div class="step ${cls}"><div class="bar"></div><div class="dot"></div><div class="label">${nome}</div></div>`;
+  });
+  progressBar += '</div>';
+
   html += `
     <div class="card">
       <span class="badge" style="color:${cor[0]};background:${cor[1]}">${esc(d.status)||'—'}</span>
       <div class="osnum">OS #${esc(d.numero)}</div>
-      <div class="att">Atualizado em ${esc(d.atualizadoEm)||'—'}</div>
+      <div class="att">Atualizado em ${esc(d.atualizadoEm)||'—'} • sincroniza sozinho</div>
+      ${progressBar}
     </div>`;
 
-  // Previsão de entrega
   if(d.entrega_programada){
     const prog = new Date(d.entrega_programada).getTime();
     const diff = Math.round((prog - Date.now())/60000);
@@ -138,7 +170,6 @@ function renderOS(){
     html += `<div class="prev" style="color:${c};border-color:${c};background:${c}18;margin-bottom:12px">⏰ Entrega prevista ${txt} — ${new Date(prog).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`;
   }
 
-  // Histórico
   if(Array.isArray(d.historico) && d.historico.length){
     html += '<div class="card"><div class="lbl">📋 Histórico</div><div class="timeline">';
     d.historico.forEach((h,i) => {
@@ -148,7 +179,6 @@ function renderOS(){
     html += '</div></div>';
   }
 
-  // Equipamento
   html += `
     <div class="card">
       <div class="lbl">💻 Equipamento</div>
@@ -159,7 +189,6 @@ function renderOS(){
       ${d.observacoes ? '<div class="lbl">📝 Observações</div><div class="val" style="font-weight:500">'+esc(d.observacoes)+'</div>' : ''}
     </div>`;
 
-  // Valores
   html += `
     <div class="card">
       <div class="lbl">💰 Valores</div>
@@ -176,7 +205,6 @@ function renderOS(){
         </div>` : ''}
     </div>`;
 
-  // Peças
   if(Array.isArray(d.pecas) && d.pecas.length){
     html += '<div class="card"><div class="lbl">🔩 Peças/serviços utilizados</div>';
     d.pecas.forEach(p => {
@@ -185,7 +213,6 @@ function renderOS(){
     html += '</div>';
   }
 
-  // Checklist
   const cl = checklistArr(d.checklist);
   if(cl.length){
     html += '<div class="card"><div class="lbl">✅ Checklist</div>';
@@ -197,19 +224,16 @@ function renderOS(){
     html += '</div>';
   }
 
-  // Fotos
   if(Array.isArray(d.fotos) && d.fotos.length){
     html += '<div class="card"><div class="lbl">📸 Fotos ('+d.fotos.length+')</div><div class="fotos">';
     d.fotos.forEach((f,i) => { html += `<img src="${f}" onclick="abrirFoto(${i})" alt="Foto ${i+1}" />`; });
     html += '</div></div>';
   }
 
-  // Laudo
   if(d.laudo){
     html += `<div class="card"><div class="lbl">📝 Laudo técnico</div><div class="val" style="font-weight:500;white-space:pre-wrap">${esc(d.laudo)}</div></div>`;
   }
 
-  // Garantia
   html += `<div class="card"><div class="row"><span class="k">🛡️ Garantia de serviço</span><span class="v">${parseInt(d.garantia)||90} dias</span></div></div>`;
 
   sec.innerHTML = html;
@@ -244,7 +268,6 @@ async function carregarOS(){
   }catch(e){}
 }
 
-/* ============ RASTREIO DA ENTREGA AO VIVO ============ */
 const BANNER = {
   aguardando: ['#FACC15','rgba(250,204,21,.12)','⏳ Aguardando o entregador retirar o pedido'],
   aceita:     ['#3B82F6','rgba(59,130,246,.12)','📦 Pedido com o entregador — saindo para entrega'],
@@ -344,7 +367,6 @@ function loopEntrega(){
     .catch(()=>{});
 }
 
-/* ============ INIT ============ */
 carregarOS();
 setInterval(carregarOS, 10000);
 </script>
