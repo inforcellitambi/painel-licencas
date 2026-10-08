@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#00E676" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Entregador" />
+<link rel="apple-touch-icon" href="./icon.svg" />
+<link rel="manifest" href="./manifest.json" />
 <title>Entregador — OS-PREMIUM</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -59,6 +63,11 @@
   .modal{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;width:100%;max-width:360px}
   .modal h3{margin:0 0 12px;font-size:16px;color:#3B82F6}
   .modal p{margin-bottom:12px;color:#8B98A5;font-size:12px;word-wrap:break-word}
+  /* 🆕 Aviso de app em segundo plano */
+  #bg-warning{position:fixed;top:56px;left:0;right:0;background:rgba(250,204,21,.15);border-bottom:1px solid rgba(250,204,21,.4);color:#FACC15;font-size:12px;font-weight:800;text-align:center;padding:8px;z-index:49;display:none}
+  #bg-warning.show{display:block}
+  /* 🆕 Botão de instalar app */
+  #install-btn{display:none;position:fixed;bottom:20px;left:12px;right:12px;max-width:400px;margin:0 auto;background:linear-gradient(135deg,#00E676,#00B25A);color:#000;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14px;cursor:pointer;z-index:100;box-shadow:0 8px 20px rgba(0,230,118,.3)}
   @media (min-width:480px){.wrap{max-width:480px;padding:70px 16px 20px}.card{padding:16px}.addr{font-size:15px}.btn{font-size:14px;min-height:50px}}
   @media (min-width:768px){.wrap{max-width:560px}}
 </style>
@@ -69,6 +78,12 @@
   <div class="brand"><b>OS-PREMIUM <span>Entregador</span></b></div>
   <div class="gps" id="gpsBadge">GPS OFF</div>
 </div>
+
+<!-- 🆕 Aviso de segundo plano -->
+<div id="bg-warning">⚠️ App em segundo plano — volte para atualizar o GPS</div>
+
+<!-- 🆕 Botão de instalação PWA -->
+<button id="install-btn" onclick="instalarApp()">📲 Instalar app na tela inicial</button>
 
 <div id="app"></div>
 <div id="toast"></div>
@@ -83,6 +98,10 @@ let watchId = null;
 let posicaoAtual = null;
 let intervaloId = null;
 let ultimaAssinatura = '';
+
+// 🆕 Wake Lock + PWA
+let wakeLock = null;
+let deferredPrompt = null;
 
 const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return'h'+h.toString(36);}
@@ -115,13 +134,11 @@ async function login(user, pass){
 function salvarSessao(ent){ sessao={id:ent.id,nome:ent.nome}; localStorage.setItem(KEY,JSON.stringify(sessao)); }
 function carregarSessao(){ try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;} }
 
-// ✅ Polling único (não duplica mais)
 function iniciarPolling(){
   if(intervaloId) clearInterval(intervaloId);
   intervaloId = setInterval(carregarEntregas, 10000);
 }
 
-// ✅ Só re-renderiza se algo mudou de verdade (sem travamentos)
 async function carregarEntregas(){
   if(!sessao) return;
   try{
@@ -137,13 +154,13 @@ async function carregarEntregas(){
     if(assinatura !== ultimaAssinatura){
       ultimaAssinatura = assinatura;
       render();
+      atualizarWakeLock(); // 🆕 liga/desliga wake lock conforme rotas
     } else {
       atualizarVisualGps();
     }
   }catch(e){}
 }
 
-// ✅ Atualiza só a linha de status do GPS, sem recriar a tela
 function atualizarVisualGps(){
   document.querySelectorAll('.gps-status').forEach(el => {
     if(posicaoAtual){
@@ -283,7 +300,6 @@ window.iniciarRota = async (token) => {
   await carregarEntregas();
 };
 
-// ✅ CORREÇÃO: só desliga o GPS se NÃO houver mais entregas ativas
 window.confirmar = async (token) => {
   if(!confirm('Confirmar entrega?')) return;
   await api('/entregas/'+encodeURIComponent(token)+'.json','PATCH',{status:'entregue',entregueEm:new Date().toISOString()});
@@ -382,7 +398,117 @@ function transmitirPosicao(lat, lng, acc, speed){
   });
 }
 
-// ✅ INIT: se recarregar a página no meio da rota, o GPS reativa sozinho
+// =====================================================
+// 🆕 WAKE LOCK — mantém a tela ligada durante a rota
+// =====================================================
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator && document.visibilityState === 'visible'){
+      if(wakeLock) return;
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+        // Re-solicita se ainda houver rota ativa e o app estiver visível
+        const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
+        if(temRota && document.visibilityState === 'visible'){
+          setTimeout(requestWakeLock, 500);
+        }
+      });
+      console.log('🔆 Wake Lock ativo');
+    }
+  }catch(e){ console.log('Wake Lock não suportado:', e.message); }
+}
+
+async function releaseWakeLock(){
+  if(wakeLock){
+    try{ await wakeLock.release(); }catch(e){}
+    wakeLock = null;
+    console.log('🔆 Wake Lock liberado');
+  }
+}
+
+function atualizarWakeLock(){
+  const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
+  if(temRota){
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
+  }
+}
+
+// =====================================================
+// 🆕 DETECÇÃO DE VISIBILIDADE — re-sincroniza ao voltar
+// =====================================================
+document.addEventListener('visibilitychange', () => {
+  const warning = document.getElementById('bg-warning');
+  if(document.visibilityState === 'visible'){
+    // Voltou para o app
+    if(warning) warning.classList.remove('show');
+    
+    const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
+    if(temRota){
+      requestWakeLock();
+      // Força envio imediato da posição atual
+      if(posicaoAtual){
+        transmitirPosicao(posicaoAtual.lat, posicaoAtual.lng, posicaoAtual.accuracy, 0);
+      }
+      // Recarrega entregas para pegar mudanças enquanto esteve fora
+      carregarEntregas();
+    }
+  } else {
+    // Saiu do app
+    if(warning) warning.classList.add('show');
+    // Wake lock será liberado automaticamente pelo sistema
+  }
+});
+
+// =====================================================
+// 🆕 PWA — instalação do app
+// =====================================================
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('install-btn');
+  if(btn && !window.matchMedia('(display-mode: standalone)').matches){
+    btn.style.display = 'block';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if(btn) btn.style.display = 'none';
+  deferredPrompt = null;
+  toast('✅ App instalado! Abra pelo ícone na tela inicial.');
+});
+
+async function instalarApp(){
+  if(!deferredPrompt){
+    toast('ℹ️ No iPhone: use "Compartilhar" → "Adicionar à Tela de Início"', true);
+    return;
+  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if(outcome === 'accepted'){
+    toast('✅ Instalando app...');
+  }
+  deferredPrompt = null;
+}
+
+// Oculta botão se já estiver instalado
+if(window.matchMedia('(display-mode: standalone)').matches){
+  // App já está instalado
+}
+
+// =====================================================
+// 🆕 REGISTRO DO SERVICE WORKER
+// =====================================================
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW erro:', e));
+}
+
+// =====================================================
+// INIT
+// =====================================================
 (async function init(){
   const s = carregarSessao();
   if(s){
@@ -391,7 +517,10 @@ function transmitirPosicao(lat, lng, acc, speed){
     await carregarEntregas();
     iniciarPolling();
     const temRotaAtiva = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
-    if(temRotaAtiva) ativarGPS(true);
+    if(temRotaAtiva){
+      ativarGPS(true);
+      requestWakeLock();
+    }
   } else {
     renderLogin();
   }
