@@ -96,7 +96,7 @@
     </div>
   </div>
 
-  <div class="foot"><b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>Atualização automática a cada 10 segundos</div>
+  <div class="foot"><b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>Atualização automática</div>
 </div>
 
 <div id="lightbox" onclick="this.style.display='none'"><img id="lightbox-img" src="" alt="" /></div>
@@ -105,9 +105,10 @@
 <script>
 const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
 const token = new URLSearchParams(location.search).get('t');
+const osIdNum = token ? token.replace('os-','') : null;
 
 let osData = null, lastJson = '';
-let entregaToken = null, rastreioAberto = false;
+let entregaToken = null, entregaEncontrada = false, rastreioAberto = false;
 let map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -141,6 +142,37 @@ function checklistArr(c){
   return [];
 }
 
+/* ⏰ CONTAGEM REGRESSIVA AO VIVO (tica a cada 1s) */
+function tickPrevisao(){
+  const el = document.getElementById('prev-big');
+  const card = document.getElementById('prev-card');
+  if(!el || !osData || !osData.entrega_programada) return;
+  const prog = new Date(osData.entrega_programada).getTime();
+  const ms = prog - Date.now();
+  let txt, c;
+  if(ms <= 0){
+    const abs = -ms;
+    const h = Math.floor(abs/3600000), m = Math.floor((abs%3600000)/60000), s = Math.floor((abs%60000)/1000);
+    txt = `ATRASADA há ${h>0?h+'h ':''}${m}min ${s}s`;
+    c = '#EF4444';
+  } else {
+    const dd = Math.floor(ms/86400000);
+    const h = Math.floor((ms%86400000)/3600000);
+    const m = Math.floor((ms%3600000)/60000);
+    const s = Math.floor((ms%60000)/1000);
+    if(dd > 0) txt = `${dd}d ${h}h ${m}min`;
+    else if(h > 0) txt = `${h}h ${m}min ${s}s`;
+    else txt = `${m}min ${s}s`;
+    const min = Math.round(ms/60000);
+    c = min <= 30 ? '#EF4444' : (min <= 120 ? '#FACC15' : '#00E676');
+  }
+  el.textContent = txt;
+  el.style.color = c;
+  if(card){ card.style.borderColor = c+'55'; }
+  const lbl = document.getElementById('prev-lbl');
+  if(lbl) lbl.style.color = c;
+}
+
 function renderOS(){
   const d = osData;
   const sec = document.getElementById('os-section');
@@ -152,7 +184,6 @@ function renderOS(){
     return;
   }
 
-  // Cabeçalho + barra ao vivo
   const etapa = calcularEtapa(d.status);
   const nomes = ['Recebida','Em reparo','Na técnica','Pronto','Entregue'];
   let progressBar = '<div class="progress-bar">';
@@ -171,7 +202,6 @@ function renderOS(){
       ${progressBar}
     </div>`;
 
-  // 👤 DADOS DO CLIENTE
   html += `
     <div class="card">
       <div class="lbl" style="margin-top:0">👤 Dados do cliente</div>
@@ -179,7 +209,6 @@ function renderOS(){
       <div class="row"><span class="k">Telefone</span><span class="v">${esc(d.telefone)||'—'}</span></div>
     </div>`;
 
-  // 💻 DADOS DO APARELHO
   html += `
     <div class="card">
       <div class="lbl" style="margin-top:0">💻 Dados do aparelho</div>
@@ -189,19 +218,12 @@ function renderOS(){
       <div class="row"><span class="k">Defeito relatado</span><span class="v" style="max-width:60%;text-align:right;font-weight:500">${esc(d.defeito)||'—'}</span></div>
     </div>`;
 
-  // ⏰ PREVISÃO DE ENTREGA
   if(d.entrega_programada){
-    const prog = new Date(d.entrega_programada).getTime();
-    const diff = Math.round((prog - Date.now())/60000);
-    let txt, c;
-    if(diff < 0){ txt = `ATRASADA há ${Math.abs(diff)} min`; c = '#EF4444'; }
-    else if(diff < 60){ txt = `em ${diff} min`; c = diff <= 30 ? '#EF4444' : '#FACC15'; }
-    else { const h = Math.floor(diff/60), m = diff%60; txt = m ? `em ${h}h${m}` : `em ${h}h`; c = '#00E676'; }
     html += `
-      <div class="card prev-card" style="border-color:${c}55">
-        <div class="lbl" style="margin:0 0 6px;color:${c}">⏰ Previsão de entrega</div>
-        <div class="big" style="color:${c}">${txt}</div>
-        <div class="sub">${new Date(prog).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      <div class="card prev-card" id="prev-card">
+        <div class="lbl" id="prev-lbl" style="margin:0 0 6px">⏰ Previsão de entrega</div>
+        <div class="big" id="prev-big">—</div>
+        <div class="sub">${new Date(d.entrega_programada).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
       </div>`;
   } else {
     html += `
@@ -212,7 +234,6 @@ function renderOS(){
       </div>`;
   }
 
-  // 💰 Valores + cashback
   html += `
     <div class="card">
       <div class="lbl" style="margin-top:0">💰 Valores</div>
@@ -229,7 +250,6 @@ function renderOS(){
         </div>` : ''}
     </div>`;
 
-  // Peças
   if(Array.isArray(d.pecas) && d.pecas.length){
     html += '<div class="card"><div class="lbl" style="margin-top:0">🔩 Peças/serviços utilizados</div>';
     d.pecas.forEach(p => {
@@ -238,7 +258,6 @@ function renderOS(){
     html += '</div>';
   }
 
-  // Checklist
   const cl = checklistArr(d.checklist);
   if(cl.length){
     html += '<div class="card"><div class="lbl" style="margin-top:0">✅ Checklist</div>';
@@ -250,32 +269,66 @@ function renderOS(){
     html += '</div>';
   }
 
-  // Fotos
   if(Array.isArray(d.fotos) && d.fotos.length){
     html += '<div class="card"><div class="lbl" style="margin-top:0">📸 Fotos ('+d.fotos.length+')</div><div class="fotos">';
     d.fotos.forEach((f,i) => { html += `<img src="${f}" onclick="abrirFoto(${i})" alt="Foto ${i+1}" />`; });
     html += '</div></div>';
   }
 
-  // Laudo + garantia
   if(d.laudo){
     html += `<div class="card"><div class="lbl" style="margin-top:0">📝 Laudo técnico</div><div class="val" style="font-weight:500;white-space:pre-wrap">${esc(d.laudo)}</div></div>`;
   }
   html += `<div class="card"><div class="row"><span class="k">🛡️ Garantia de serviço</span><span class="v">${parseInt(d.garantia)||90} dias</span></div></div>`;
 
   sec.innerHTML = html;
+  tickPrevisao();
+  atualizarBotaoEntrega();
+}
 
-  // 🛵 Botão de rastreio OU aviso de sem entrega
+/* 🛵 Decide: botão de rastreio OU aviso de sem entrega */
+function atualizarBotaoEntrega(){
   const btn = document.getElementById('btnEntrega');
   const aviso = document.getElementById('avisoSemEntrega');
-  if(d.entregaToken){
-    entregaToken = d.entregaToken;
-    if(!rastreioAberto){ btn.style.display = 'block'; }
+  if(rastreioAberto){ btn.style.display='none'; aviso.style.display='none'; return; }
+  if(entregaEncontrada){
+    btn.style.display = 'block';
     aviso.style.display = 'none';
   } else {
     btn.style.display = 'none';
-    if(!rastreioAberto) aviso.style.display = 'block';
+    aviso.style.display = 'block';
   }
+}
+
+/* 🔎 Procura a entrega desta OS direto no Firebase (não depende de gravação extra) */
+async function descobrirEntrega(){
+  if(entregaEncontrada || !osIdNum) return;
+  try{
+    // 1º tenta pelo campo entregaToken (se existir)
+    if(osData && osData.entregaToken){
+      entregaToken = osData.entregaToken;
+      entregaEncontrada = true;
+      atualizarBotaoEntrega();
+      return;
+    }
+    // 2º procura pela OS dentro de todas as entregas
+    const r = await fetch(FB+'/entregas.json');
+    const d = await r.json();
+    if(!d) return;
+    const ativas = [];
+    const todas = [];
+    Object.entries(d).forEach(([k,v])=>{
+      if(String(v.osId) === String(osIdNum)){
+        todas.push({k,v});
+        if(!['entregue','cancelada','recusada'].includes(v.status)) ativas.push({k,v});
+      }
+    });
+    const escolhida = ativas.length ? ativas[ativas.length-1] : (todas.length ? todas[todas.length-1] : null);
+    if(escolhida){
+      entregaToken = escolhida.k;
+      entregaEncontrada = true;
+      atualizarBotaoEntrega();
+    }
+  }catch(e){}
 }
 
 window.abrirRastreio = () => {
@@ -315,6 +368,7 @@ async function carregarOS(){
       osData = d;
       renderOS();
     }
+    await descobrirEntrega();
   }catch(e){}
 }
 
@@ -411,8 +465,11 @@ function loopEntrega(){
     .catch(()=>{});
 }
 
+/* ============ INIT ============ */
 carregarOS();
-setInterval(carregarOS, 10000);
+setInterval(carregarOS, 10000);   // status da OS
+setInterval(tickPrevisao, 1000);  // contagem regressiva 1s
+setInterval(descobrirEntrega, 15000); // re-checa se criou entrega
 </script>
 </body>
 </html>
