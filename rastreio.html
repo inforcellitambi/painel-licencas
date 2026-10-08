@@ -111,6 +111,7 @@ let osData = null, lastJson = '';
 let entregaToken = null, entregaEncontrada = false, rastreioAberto = false;
 let statusEntregaFinal = null;
 let map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
+let mapaCentralizado = false; // 🆕 controle para centralizar só na primeira vez
 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -177,7 +178,6 @@ function tickPrevisao(){
 function renderOS(){
   const d = osData;
   const sec = document.getElementById('os-section');
-  // Se a entrega vinculada foi concluída, força o status "Entregue" na página
   const statusEfetivo = statusEntregaFinal === 'entregue' ? 'Entregue' : d.status;
   const cor = STATUS_COR[statusEfetivo] || ['#9CA3AF','rgba(156,163,175,.14)'];
   let html = '';
@@ -288,7 +288,6 @@ function renderOS(){
   atualizarBotaoEntrega();
 }
 
-/* 🛵 Botão de rastreio OU aviso de sem entrega */
 function atualizarBotaoEntrega(){
   const btn = document.getElementById('btnEntrega');
   const aviso = document.getElementById('avisoSemEntrega');
@@ -303,7 +302,6 @@ function atualizarBotaoEntrega(){
   }
 }
 
-/* 🔎 Procura a entrega desta OS direto no Firebase */
 async function descobrirEntrega(){
   if(entregaEncontrada || !osIdNum) return;
   try{
@@ -339,6 +337,7 @@ async function descobrirEntrega(){
 
 window.abrirRastreio = () => {
   rastreioAberto = true;
+  mapaCentralizado = false; // 🆕 reseta ao abrir
   document.getElementById('rl-box').style.display = 'block';
   document.getElementById('btnEntrega').style.display = 'none';
   document.getElementById('avisoSemEntrega').style.display = 'none';
@@ -406,9 +405,34 @@ function distKm(a,b,c,d){
 
 function initMapa(){
   if(map) return;
-  map = L.map('rl-mapa',{zoomControl:true,attributionControl:false}).setView([-23.55,-46.63],12);
+  // Começa em visão ampla do Brasil (não mais em SP)
+  map = L.map('rl-mapa',{zoomControl:true,attributionControl:false}).setView([-15.78,-47.93],4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
   setTimeout(()=>map.invalidateSize(),400);
+}
+
+/* 🆕 AJUSTA A VISÃO do mapa para mostrar entregador + destino juntos,
+   ou só o entregador se o destino ainda não foi geocodificado.
+   Só roda na primeira vez (mapaCentralizado = false). */
+function ajustarVisaoMapa(){
+  if(!map || mapaCentralizado) return;
+  mapaCentralizado = true;
+  
+  setTimeout(()=>{
+    if(mMoto && mDest){
+      // Tem os dois: mostra entregador E destino na mesma tela
+      const grupo = L.featureGroup([mMoto, mDest]);
+      map.fitBounds(grupo.getBounds(), {padding:[50,50], maxZoom:15});
+    } else if(mMoto){
+      // Só entregador: centraliza nele
+      const ll = mMoto.getLatLng();
+      map.setView(ll, 15);
+    } else if(mDest){
+      // Só destino: centraliza nele
+      const ll = mDest.getLatLng();
+      map.setView(ll, 15);
+    }
+  }, 300);
 }
 
 function geocode(end, cb){
@@ -426,14 +450,11 @@ function loopEntrega(){
       if(!ent) return;
       setBanner(ent.status);
 
-      /* ✅ ENTREGA CONCLUÍDA (pelo entregador OU pelo sistema):
-         fecha o mapa do cliente e mostra status final */
       if(['entregue','cancelada','recusada'].includes(ent.status)){
         if(statusEntregaFinal !== ent.status){
           statusEntregaFinal = ent.status;
-          renderOS(); // atualiza badge + barra para "Entregue"
+          renderOS();
         }
-        // FECHA O MAPA
         document.getElementById('rl-mapa').style.display = 'none';
         if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
         if(linha && map){ map.removeLayer(linha); linha=null; }
@@ -452,7 +473,6 @@ function loopEntrega(){
         return;
       }
 
-      // Entrega ativa: garante mapa visível
       document.getElementById('rl-mapa').style.display = 'block';
 
       if(ent.endereco && !coordsDest){
@@ -462,7 +482,8 @@ function loopEntrega(){
           initMapa();
           mDest = L.marker([c.lat,c.lng],{icon:L.divIcon({html:'<div style="font-size:30px">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);
           document.getElementById('rl-load').style.display='none';
-          map.setView([c.lat,c.lng],14);
+          // Se o entregador já apareceu antes, ajusta a visão agora
+          ajustarVisaoMapa();
         });
       }
 
@@ -474,13 +495,14 @@ function loopEntrega(){
             initMapa();
             if(!mMoto){
               mMoto = L.marker([pos.lat,pos.lng],{icon:L.divIcon({html:'<div style="font-size:28px">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map);
+              // 🆕 Primeira posição recebida: centraliza o mapa automaticamente
+              ajustarVisaoMapa();
             } else {
               mMoto.setLatLng([pos.lat,pos.lng]);
             }
             if(coordsDest){
               if(linha) map.removeLayer(linha);
               linha = L.polyline([[pos.lat,pos.lng],[coordsDest.lat,coordsDest.lng]],{color:'#00E676',weight:4,dashArray:'8 8',opacity:.8}).addTo(map);
-              map.fitBounds(linha.getBounds(),{padding:[30,30]});
               const d = distKm(pos.lat,pos.lng,coordsDest.lat,coordsDest.lng);
               eta.style.background='rgba(0,230,118,.08)'; eta.style.borderColor='rgba(0,230,118,.3)'; eta.style.color='#00E676';
               eta.innerHTML = '🛵 O entregador está a <b>'+d.toFixed(1)+' km</b> de você • chegada em ~<b>'+Math.max(1,Math.round(d/30*60))+' min</b>';
@@ -494,7 +516,6 @@ function loopEntrega(){
     .catch(()=>{});
 }
 
-/* ============ INIT ============ */
 carregarOS();
 setInterval(carregarOS, 10000);
 setInterval(tickPrevisao, 1000);
