@@ -63,10 +63,8 @@
   .modal{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;width:100%;max-width:360px}
   .modal h3{margin:0 0 12px;font-size:16px;color:#3B82F6}
   .modal p{margin-bottom:12px;color:#8B98A5;font-size:12px;word-wrap:break-word}
-  /* 🆕 Aviso de app em segundo plano */
   #bg-warning{position:fixed;top:56px;left:0;right:0;background:rgba(250,204,21,.15);border-bottom:1px solid rgba(250,204,21,.4);color:#FACC15;font-size:12px;font-weight:800;text-align:center;padding:8px;z-index:49;display:none}
   #bg-warning.show{display:block}
-  /* 🆕 Botão de instalar app */
   #install-btn{display:none;position:fixed;bottom:20px;left:12px;right:12px;max-width:400px;margin:0 auto;background:linear-gradient(135deg,#00E676,#00B25A);color:#000;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14px;cursor:pointer;z-index:100;box-shadow:0 8px 20px rgba(0,230,118,.3)}
   @media (min-width:480px){.wrap{max-width:480px;padding:70px 16px 20px}.card{padding:16px}.addr{font-size:15px}.btn{font-size:14px;min-height:50px}}
   @media (min-width:768px){.wrap{max-width:560px}}
@@ -79,10 +77,8 @@
   <div class="gps" id="gpsBadge">GPS OFF</div>
 </div>
 
-<!-- 🆕 Aviso de segundo plano -->
 <div id="bg-warning">⚠️ App em segundo plano — volte para atualizar o GPS</div>
 
-<!-- 🆕 Botão de instalação PWA -->
 <button id="install-btn" onclick="instalarApp()">📲 Instalar app na tela inicial</button>
 
 <div id="app"></div>
@@ -94,14 +90,15 @@ const KEY = 'os_entregador_sessao';
 
 let sessao = null;
 let entregas = [];
+let tokensAnteriores = new Set(); // 🆕 guarda os tokens da última checagem
+let primeiraCarga = true; // 🆕 não toca som na primeira carga (só em novas)
 let watchId = null;
 let posicaoAtual = null;
 let intervaloId = null;
 let ultimaAssinatura = '';
-
-// 🆕 Wake Lock + PWA
 let wakeLock = null;
 let deferredPrompt = null;
+let audioCtx = null; // 🆕 contexto de áudio (criado uma vez só)
 
 const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return'h'+h.toString(36);}
@@ -139,6 +136,27 @@ function iniciarPolling(){
   intervaloId = setInterval(carregarEntregas, 10000);
 }
 
+// 🆕 Detecta NOVAS entregas e dispara som + notificação
+function detectarNovasEntregas(listaAtual){
+  if(primeiraCarga){
+    // Primeira carga após login: não tocar som (só popular a lista anterior)
+    tokensAnteriores = new Set(listaAtual.map(e => e.token));
+    primeiraCarga = false;
+    return;
+  }
+
+  const novos = listaAtual.filter(e => 
+    e.status === 'aguardando' && !tokensAnteriores.has(e.token)
+  );
+
+  novos.forEach(e => {
+    tocarSom();
+    mostrarNotificacao(e);
+  });
+
+  tokensAnteriores = new Set(listaAtual.map(e => e.token));
+}
+
 async function carregarEntregas(){
   if(!sessao) return;
   try{
@@ -149,12 +167,16 @@ async function carregarEntregas(){
       e.entregadorId === sessao.id &&
       !['entregue','cancelada','recusada'].includes(e.status)
     );
+
+    // 🆕 Detecta novas entregas (som + notificação)
+    detectarNovasEntregas(novas);
+
     const assinatura = JSON.stringify(novas.map(e=>e.token+'|'+e.status));
     entregas = novas;
     if(assinatura !== ultimaAssinatura){
       ultimaAssinatura = assinatura;
       render();
-      atualizarWakeLock(); // 🆕 liga/desliga wake lock conforme rotas
+      atualizarWakeLock();
     } else {
       atualizarVisualGps();
     }
@@ -198,8 +220,11 @@ function renderLogin(erro){
       toast('✅ Bem-vindo, '+res.ent.nome);
       document.getElementById('topbar').style.display = 'flex';
       ultimaAssinatura = '';
-      carregarEntregas();
+      primeiraCarga = true; // 🆕 reseta para não tocar som na primeira carga
+      tokensAnteriores = new Set();
+      await carregarEntregas();
       iniciarPolling();
+      pedirPermissaoNotificacao(); // 🆕 pede permissão só após login bem-sucedido
     } else {
       renderLogin(res.erro);
     }
@@ -337,6 +362,8 @@ window.sair = () => {
     pararGPS();
     if(intervaloId){clearInterval(intervaloId);intervaloId=null;}
     ultimaAssinatura = '';
+    primeiraCarga = true;
+    tokensAnteriores = new Set();
     renderLogin();
   }
 };
@@ -399,7 +426,7 @@ function transmitirPosicao(lat, lng, acc, speed){
 }
 
 // =====================================================
-// 🆕 WAKE LOCK — mantém a tela ligada durante a rota
+// 🆕 WAKE LOCK
 // =====================================================
 async function requestWakeLock(){
   try{
@@ -408,62 +435,45 @@ async function requestWakeLock(){
       wakeLock = await navigator.wakeLock.request('screen');
       wakeLock.addEventListener('release', () => {
         wakeLock = null;
-        // Re-solicita se ainda houver rota ativa e o app estiver visível
         const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
         if(temRota && document.visibilityState === 'visible'){
           setTimeout(requestWakeLock, 500);
         }
       });
-      console.log('🔆 Wake Lock ativo');
     }
-  }catch(e){ console.log('Wake Lock não suportado:', e.message); }
+  }catch(e){}
 }
 
 async function releaseWakeLock(){
   if(wakeLock){
     try{ await wakeLock.release(); }catch(e){}
     wakeLock = null;
-    console.log('🔆 Wake Lock liberado');
   }
 }
 
 function atualizarWakeLock(){
   const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
-  if(temRota){
-    requestWakeLock();
-  } else {
-    releaseWakeLock();
-  }
+  if(temRota) requestWakeLock();
+  else releaseWakeLock();
 }
 
-// =====================================================
-// 🆕 DETECÇÃO DE VISIBILIDADE — re-sincroniza ao voltar
-// =====================================================
 document.addEventListener('visibilitychange', () => {
   const warning = document.getElementById('bg-warning');
   if(document.visibilityState === 'visible'){
-    // Voltou para o app
     if(warning) warning.classList.remove('show');
-    
     const temRota = entregas.some(e => e.status === 'aceita' || e.status === 'em_rota');
     if(temRota){
       requestWakeLock();
-      // Força envio imediato da posição atual
-      if(posicaoAtual){
-        transmitirPosicao(posicaoAtual.lat, posicaoAtual.lng, posicaoAtual.accuracy, 0);
-      }
-      // Recarrega entregas para pegar mudanças enquanto esteve fora
+      if(posicaoAtual) transmitirPosicao(posicaoAtual.lat, posicaoAtual.lng, posicaoAtual.accuracy, 0);
       carregarEntregas();
     }
   } else {
-    // Saiu do app
     if(warning) warning.classList.add('show');
-    // Wake lock será liberado automaticamente pelo sistema
   }
 });
 
 // =====================================================
-// 🆕 PWA — instalação do app
+// 🆕 PWA
 // =====================================================
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -488,19 +498,100 @@ async function instalarApp(){
   }
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-  if(outcome === 'accepted'){
-    toast('✅ Instalando app...');
-  }
+  if(outcome === 'accepted') toast('✅ Instalando app...');
   deferredPrompt = null;
 }
 
-// Oculta botão se já estiver instalado
-if(window.matchMedia('(display-mode: standalone)').matches){
-  // App já está instalado
+// =====================================================
+// 🆕 NOTIFICAÇÕES + SOM
+// =====================================================
+async function pedirPermissaoNotificacao(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted') return;
+  if(Notification.permission === 'denied') return;
+  
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm === 'granted'){
+      toast('🔔 Notificações ativadas! Você será avisado de novas entregas.');
+    }
+  }catch(e){}
+}
+
+// 🆕 Som de alerta (beep-beep via Web Audio API — sem arquivo externo)
+function tocarSom(){
+  try{
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+
+    const agora = audioCtx.currentTime;
+    
+    // Beep 1
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.value = 880;
+    gain1.gain.setValueAtTime(0, agora);
+    gain1.gain.linearRampToValueAtTime(0.3, agora + 0.02);
+    gain1.gain.linearRampToValueAtTime(0, agora + 0.25);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(agora);
+    osc1.stop(agora + 0.25);
+
+    // Beep 2 (0.3s depois)
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = 1100;
+    gain2.gain.setValueAtTime(0, agora + 0.3);
+    gain2.gain.linearRampToValueAtTime(0.3, agora + 0.32);
+    gain2.gain.linearRampToValueAtTime(0, agora + 0.55);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(agora + 0.3);
+    osc2.stop(agora + 0.55);
+  }catch(e){ console.log('Erro ao tocar som:', e); }
+}
+
+// 🆕 Notificação nativa do sistema
+function mostrarNotificacao(entrega){
+  // Se o app está em primeiro plano, mostra só toast + som (notificação seria redundante)
+  if(document.visibilityState === 'visible'){
+    toast('🔔 Nova entrega! OS #' + esc(entrega.numero));
+    return;
+  }
+
+  // App em segundo plano / fechado: notificação nativa
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+
+  try{
+    const n = new Notification('🛵 Nova entrega para você!', {
+      body: `OS #${entrega.numero} — ${entrega.cliente || 'Cliente'}\n${entrega.endereco || 'Ver no app'}`,
+      icon: './icon.svg',
+      badge: './icon.svg',
+      tag: 'entrega-' + entrega.token, // evita notificações duplicadas
+      requireInteraction: false,
+      silent: false
+    });
+
+    n.onclick = () => {
+      window.focus();
+      n.close();
+    };
+
+    // Fecha sozinha após 8 segundos
+    setTimeout(() => { try{ n.close(); }catch(e){} }, 8000);
+  }catch(e){ console.log('Erro na notificação:', e); }
 }
 
 // =====================================================
-// 🆕 REGISTRO DO SERVICE WORKER
+// REGISTRO DO SERVICE WORKER
 // =====================================================
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW erro:', e));
