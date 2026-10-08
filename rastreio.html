@@ -109,6 +109,7 @@ const osIdNum = token ? token.replace('os-','') : null;
 
 let osData = null, lastJson = '';
 let entregaToken = null, entregaEncontrada = false, rastreioAberto = false;
+let statusEntregaFinal = null;
 let map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -142,7 +143,7 @@ function checklistArr(c){
   return [];
 }
 
-/* ⏰ CONTAGEM REGRESSIVA AO VIVO (tica a cada 1s) */
+/* ⏰ CONTAGEM REGRESSIVA AO VIVO (1s) */
 function tickPrevisao(){
   const el = document.getElementById('prev-big');
   const card = document.getElementById('prev-card');
@@ -168,7 +169,7 @@ function tickPrevisao(){
   }
   el.textContent = txt;
   el.style.color = c;
-  if(card){ card.style.borderColor = c+'55'; }
+  if(card) card.style.borderColor = c+'55';
   const lbl = document.getElementById('prev-lbl');
   if(lbl) lbl.style.color = c;
 }
@@ -176,7 +177,9 @@ function tickPrevisao(){
 function renderOS(){
   const d = osData;
   const sec = document.getElementById('os-section');
-  const cor = STATUS_COR[d.status] || ['#9CA3AF','rgba(156,163,175,.14)'];
+  // Se a entrega vinculada foi concluída, força o status "Entregue" na página
+  const statusEfetivo = statusEntregaFinal === 'entregue' ? 'Entregue' : d.status;
+  const cor = STATUS_COR[statusEfetivo] || ['#9CA3AF','rgba(156,163,175,.14)'];
   let html = '';
 
   if(d.expiraEm && new Date(d.expiraEm).getTime() < Date.now()){
@@ -184,7 +187,7 @@ function renderOS(){
     return;
   }
 
-  const etapa = calcularEtapa(d.status);
+  const etapa = calcularEtapa(statusEfetivo);
   const nomes = ['Recebida','Em reparo','Na técnica','Pronto','Entregue'];
   let progressBar = '<div class="progress-bar">';
   nomes.forEach((nome,i)=>{
@@ -196,7 +199,7 @@ function renderOS(){
 
   html += `
     <div class="card">
-      <span class="badge" style="color:${cor[0]};background:${cor[1]}">${esc(d.status)||'—'}</span>
+      <span class="badge" style="color:${cor[0]};background:${cor[1]}">${esc(statusEfetivo)||'—'}</span>
       <div class="osnum">OS #${esc(d.numero)}</div>
       <div class="att">Atualizado em ${esc(d.atualizadoEm)||'—'} • sincroniza sozinho</div>
       ${progressBar}
@@ -285,13 +288,14 @@ function renderOS(){
   atualizarBotaoEntrega();
 }
 
-/* 🛵 Decide: botão de rastreio OU aviso de sem entrega */
+/* 🛵 Botão de rastreio OU aviso de sem entrega */
 function atualizarBotaoEntrega(){
   const btn = document.getElementById('btnEntrega');
   const aviso = document.getElementById('avisoSemEntrega');
   if(rastreioAberto){ btn.style.display='none'; aviso.style.display='none'; return; }
   if(entregaEncontrada){
     btn.style.display = 'block';
+    btn.textContent = statusEntregaFinal === 'entregue' ? '✅ Ver detalhes da entrega concluída' : '🛵 Rastrear minha entrega em tempo real';
     aviso.style.display = 'none';
   } else {
     btn.style.display = 'none';
@@ -299,18 +303,16 @@ function atualizarBotaoEntrega(){
   }
 }
 
-/* 🔎 Procura a entrega desta OS direto no Firebase (não depende de gravação extra) */
+/* 🔎 Procura a entrega desta OS direto no Firebase */
 async function descobrirEntrega(){
   if(entregaEncontrada || !osIdNum) return;
   try{
-    // 1º tenta pelo campo entregaToken (se existir)
     if(osData && osData.entregaToken){
       entregaToken = osData.entregaToken;
       entregaEncontrada = true;
       atualizarBotaoEntrega();
       return;
     }
-    // 2º procura pela OS dentro de todas as entregas
     const r = await fetch(FB+'/entregas.json');
     const d = await r.json();
     if(!d) return;
@@ -326,6 +328,10 @@ async function descobrirEntrega(){
     if(escolhida){
       entregaToken = escolhida.k;
       entregaEncontrada = true;
+      if(['entregue','cancelada','recusada'].includes(escolhida.v.status)){
+        statusEntregaFinal = escolhida.v.status;
+        renderOS();
+      }
       atualizarBotaoEntrega();
     }
   }catch(e){}
@@ -339,6 +345,8 @@ window.abrirRastreio = () => {
   if(!map){
     loopEntrega();
     setInterval(loopEntrega, 5000);
+  } else {
+    loopEntrega();
   }
   document.getElementById('rl-box').scrollIntoView({behavior:'smooth'});
 };
@@ -377,7 +385,7 @@ const BANNER = {
   aguardando: ['#FACC15','rgba(250,204,21,.12)','⏳ Aguardando o entregador retirar o pedido'],
   aceita:     ['#3B82F6','rgba(59,130,246,.12)','📦 Pedido com o entregador — saindo para entrega'],
   em_rota:    ['#00E676','rgba(0,230,118,.12)','🛵 A caminho! Acompanhe no mapa abaixo'],
-  entregue:   ['#9CA3AF','rgba(156,163,175,.12)','✅ Entrega concluída! Obrigado pela preferência'],
+  entregue:   ['#00E676','rgba(0,230,118,.12)','✅ Entrega concluída! Obrigado pela preferência'],
   cancelada:  ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja'],
   recusada:   ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja']
 };
@@ -418,6 +426,35 @@ function loopEntrega(){
       if(!ent) return;
       setBanner(ent.status);
 
+      /* ✅ ENTREGA CONCLUÍDA (pelo entregador OU pelo sistema):
+         fecha o mapa do cliente e mostra status final */
+      if(['entregue','cancelada','recusada'].includes(ent.status)){
+        if(statusEntregaFinal !== ent.status){
+          statusEntregaFinal = ent.status;
+          renderOS(); // atualiza badge + barra para "Entregue"
+        }
+        // FECHA O MAPA
+        document.getElementById('rl-mapa').style.display = 'none';
+        if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
+        if(linha && map){ map.removeLayer(linha); linha=null; }
+        const eta = document.getElementById('rl-eta');
+        if(ent.status === 'entregue'){
+          eta.style.background='rgba(0,230,118,.08)';
+          eta.style.borderColor='rgba(0,230,118,.3)';
+          eta.style.color='#00E676';
+          eta.innerHTML = '✅ <b>Pedido entregue com sucesso!</b><br/>Obrigado pela preferência.';
+        } else {
+          eta.style.background='rgba(239,68,68,.08)';
+          eta.style.borderColor='rgba(239,68,68,.3)';
+          eta.style.color='#EF4444';
+          eta.textContent = 'Entrega encerrada. Fale com a loja para mais informações.';
+        }
+        return;
+      }
+
+      // Entrega ativa: garante mapa visível
+      document.getElementById('rl-mapa').style.display = 'block';
+
       if(ent.endereco && !coordsDest){
         geocode(ent.endereco, c=>{
           if(!c){ document.getElementById('rl-load').innerHTML='📍 Mapa indisponível para este endereço'; return; }
@@ -427,14 +464,6 @@ function loopEntrega(){
           document.getElementById('rl-load').style.display='none';
           map.setView([c.lat,c.lng],14);
         });
-      }
-
-      if(['entregue','cancelada','recusada'].includes(ent.status)){
-        if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
-        const eta = document.getElementById('rl-eta');
-        eta.style.background='rgba(255,255,255,.04)'; eta.style.borderColor='rgba(255,255,255,.1)'; eta.style.color='#8B98A5';
-        eta.textContent = ent.status==='entregue' ? '✅ Pedido entregue. Obrigado!' : 'Entrega encerrada.';
-        return;
       }
 
       fetch(FB+'/posicoes/'+encodeURIComponent(entregaToken)+'.json')
@@ -467,9 +496,9 @@ function loopEntrega(){
 
 /* ============ INIT ============ */
 carregarOS();
-setInterval(carregarOS, 10000);   // status da OS
-setInterval(tickPrevisao, 1000);  // contagem regressiva 1s
-setInterval(descobrirEntrega, 15000); // re-checa se criou entrega
+setInterval(carregarOS, 10000);
+setInterval(tickPrevisao, 1000);
+setInterval(descobrirEntrega, 15000);
 </script>
 </body>
 </html>
