@@ -59,6 +59,15 @@
   #rl-card{background:#0F1720;border:1px solid rgba(0,230,118,.35);border-radius:16px;padding:16px;margin-bottom:12px}
   #rl-titulo{font-size:14px;font-weight:800;color:#00E676;margin-bottom:10px}
   #rl-banner{padding:12px;border-radius:12px;font-weight:800;font-size:13px;text-align:center;margin-bottom:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
+  /* 🆕 CARTÃO DO ENTREGADOR */
+  #rl-entregador{display:none;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(0,230,118,.08),rgba(59,130,246,.06));border:1px solid rgba(0,230,118,.3);margin-bottom:12px;gap:14px;align-items:center}
+  #rl-entregador.visible{display:flex}
+  #rl-entregador .foto{width:64px;height:64px;border-radius:50%;background:rgba(0,230,118,.15);border:3px solid rgba(0,230,118,.4);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;overflow:hidden}
+  #rl-entregador .foto img{width:100%;height:100%;object-fit:cover}
+  #rl-entregador .info{flex:1;min-width:0}
+  #rl-entregador .info .nome{font-size:16px;font-weight:800;color:#E6EDF3;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #rl-entregador .info .sub{font-size:12px;color:#9CA3AF;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  #rl-entregador .info .sub span{display:inline-flex;align-items:center;gap:4px}
   #rl-mapa{height:300px;border-radius:12px;overflow:hidden;position:relative;background:#0E1A24}
   #rl-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.9);color:#8B98A5;font-size:12px;z-index:5}
   #rl-eta{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#8B98A5;font-size:12px;font-weight:700;text-align:center}
@@ -91,6 +100,19 @@
     <div id="rl-card">
       <div id="rl-titulo">🛵 Rastreamento da entrega ao vivo</div>
       <div id="rl-banner">Carregando...</div>
+      
+      <!-- 🆕 CARTÃO DO ENTREGADOR -->
+      <div id="rl-entregador">
+        <div class="foto" id="rl-ent-foto">🛵</div>
+        <div class="info">
+          <div class="nome" id="rl-ent-nome">—</div>
+          <div class="sub">
+            <span id="rl-ent-veiculo">🚗 —</span>
+            <span id="rl-ent-placa">🔢 —</span>
+          </div>
+        </div>
+      </div>
+      
       <div id="rl-mapa"><div id="rl-load">🗺️ Preparando mapa...</div></div>
       <div id="rl-eta">Aguardando o GPS do entregador...</div>
     </div>
@@ -111,7 +133,8 @@ let osData = null, lastJson = '';
 let entregaToken = null, entregaEncontrada = false, rastreioAberto = false;
 let statusEntregaFinal = null;
 let map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
-let mapaCentralizado = false; // 🆕 controle para centralizar só na primeira vez
+let mapaCentralizado = false;
+let dadosEntregador = null; // 🆕 cache do entregador
 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -144,7 +167,6 @@ function checklistArr(c){
   return [];
 }
 
-/* ⏰ CONTAGEM REGRESSIVA AO VIVO (1s) */
 function tickPrevisao(){
   const el = document.getElementById('prev-big');
   const card = document.getElementById('prev-card');
@@ -335,9 +357,43 @@ async function descobrirEntrega(){
   }catch(e){}
 }
 
+// 🆕 BUSCA DADOS DO ENTREGADOR (foto, veículo, placa)
+async function carregarDadosEntregador(entregadorId){
+  if(!entregadorId || dadosEntregador?.id === entregadorId) return;
+  try{
+    const r = await fetch(FB+'/entregadores/'+encodeURIComponent(entregadorId)+'.json');
+    const d = await r.json();
+    if(!d) return;
+    dadosEntregador = { id: entregadorId, ...d };
+    atualizarCartaoEntregador();
+  }catch(e){}
+}
+
+// 🆕 ATUALIZA O CARTÃO DO ENTREGADOR NA TELA
+function atualizarCartaoEntregador(){
+  if(!dadosEntregador) return;
+  const cartao = document.getElementById('rl-entregador');
+  const foto = document.getElementById('rl-ent-foto');
+  const nome = document.getElementById('rl-ent-nome');
+  const veiculo = document.getElementById('rl-ent-veiculo');
+  const placa = document.getElementById('rl-ent-placa');
+  
+  cartao.classList.add('visible');
+  nome.textContent = dadosEntregador.nome || '—';
+  
+  if(dadosEntregador.foto){
+    foto.innerHTML = `<img src="${dadosEntregador.foto}" alt="${esc(dadosEntregador.nome)}" />`;
+  } else {
+    foto.innerHTML = '🛵';
+  }
+  
+  veiculo.innerHTML = '🚗 ' + (dadosEntregador.veiculo || '—');
+  placa.innerHTML = '🔢 ' + (dadosEntregador.placa || '—');
+}
+
 window.abrirRastreio = () => {
   rastreioAberto = true;
-  mapaCentralizado = false; // 🆕 reseta ao abrir
+  mapaCentralizado = false;
   document.getElementById('rl-box').style.display = 'block';
   document.getElementById('btnEntrega').style.display = 'none';
   document.getElementById('avisoSemEntrega').style.display = 'none';
@@ -379,7 +435,6 @@ async function carregarOS(){
   }catch(e){}
 }
 
-/* ============ MAPA DA ENTREGA ============ */
 const BANNER = {
   aguardando: ['#FACC15','rgba(250,204,21,.12)','⏳ Aguardando o entregador retirar o pedido'],
   aceita:     ['#3B82F6','rgba(59,130,246,.12)','📦 Pedido com o entregador — saindo para entrega'],
@@ -405,30 +460,23 @@ function distKm(a,b,c,d){
 
 function initMapa(){
   if(map) return;
-  // Começa em visão ampla do Brasil (não mais em SP)
   map = L.map('rl-mapa',{zoomControl:true,attributionControl:false}).setView([-15.78,-47.93],4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
   setTimeout(()=>map.invalidateSize(),400);
 }
 
-/* 🆕 AJUSTA A VISÃO do mapa para mostrar entregador + destino juntos,
-   ou só o entregador se o destino ainda não foi geocodificado.
-   Só roda na primeira vez (mapaCentralizado = false). */
 function ajustarVisaoMapa(){
   if(!map || mapaCentralizado) return;
   mapaCentralizado = true;
   
   setTimeout(()=>{
     if(mMoto && mDest){
-      // Tem os dois: mostra entregador E destino na mesma tela
       const grupo = L.featureGroup([mMoto, mDest]);
       map.fitBounds(grupo.getBounds(), {padding:[50,50], maxZoom:15});
     } else if(mMoto){
-      // Só entregador: centraliza nele
       const ll = mMoto.getLatLng();
       map.setView(ll, 15);
     } else if(mDest){
-      // Só destino: centraliza nele
       const ll = mDest.getLatLng();
       map.setView(ll, 15);
     }
@@ -450,12 +498,18 @@ function loopEntrega(){
       if(!ent) return;
       setBanner(ent.status);
 
+      // 🆕 Carrega dados do entregador para o cartão
+      if(ent.entregadorId){
+        carregarDadosEntregador(ent.entregadorId);
+      }
+
       if(['entregue','cancelada','recusada'].includes(ent.status)){
         if(statusEntregaFinal !== ent.status){
           statusEntregaFinal = ent.status;
           renderOS();
         }
         document.getElementById('rl-mapa').style.display = 'none';
+        document.getElementById('rl-entregador').classList.remove('visible');
         if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
         if(linha && map){ map.removeLayer(linha); linha=null; }
         const eta = document.getElementById('rl-eta');
@@ -482,7 +536,6 @@ function loopEntrega(){
           initMapa();
           mDest = L.marker([c.lat,c.lng],{icon:L.divIcon({html:'<div style="font-size:30px">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);
           document.getElementById('rl-load').style.display='none';
-          // Se o entregador já apareceu antes, ajusta a visão agora
           ajustarVisaoMapa();
         });
       }
@@ -495,7 +548,6 @@ function loopEntrega(){
             initMapa();
             if(!mMoto){
               mMoto = L.marker([pos.lat,pos.lng],{icon:L.divIcon({html:'<div style="font-size:28px">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map);
-              // 🆕 Primeira posição recebida: centraliza o mapa automaticamente
               ajustarVisaoMapa();
             } else {
               mMoto.setLatLng([pos.lat,pos.lng]);
