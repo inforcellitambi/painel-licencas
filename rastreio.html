@@ -1,577 +1,203 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#00E676" />
-<title>Acompanhe sua OS — OS-PREMIUM</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300E676'/><path d='M20 62 L32 62 L40 44 L60 44 L68 62 L82 62' stroke='%23070B0F' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='33' cy='67' r='8' fill='%23070B0F'/><circle cx='67' cy='67' r='8' fill='%23070B0F'/><rect x='44' y='30' width='12' height='12' rx='3' fill='%23070B0F'/></svg>" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{background:#070B0F;color:#E6EDF3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.5;min-height:100vh;overflow-x:hidden}
-  .topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;background:rgba(7,11,15,.98);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07);z-index:50}
-  .topbar svg{width:30px;height:30px;flex-shrink:0}
-  .topbar b{font-size:13px}
-  .topbar b span{color:#00E676}
-  .live{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#00E676;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);padding:5px 10px;border-radius:999px}
-  .live i{width:7px;height:7px;border-radius:50%;background:#00E676;animation:pulse 1.6s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,230,118,.55)}70%{box-shadow:0 0 0 8px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
-  .wrap{max-width:640px;margin:0 auto;padding:70px 12px 30px}
-  .card{background:#0F1720;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px;margin-bottom:12px}
-  .badge{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:12px;font-weight:800}
-  .osnum{font-family:ui-monospace,Consolas,monospace;font-size:22px;font-weight:800;color:#00E676;margin:8px 0 4px}
-  .att{font-size:11px;color:#6B7280}
-  .lbl{font-size:10px;color:#8B98A5;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 4px;font-weight:700}
-  .val{font-size:14px;font-weight:600;word-wrap:break-word}
-  .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:13px}
-  .row:last-child{border-bottom:none}
-  .row .k{color:#8B98A5}
-  .row .v{font-weight:700;text-align:right}
-  .progress-bar{display:flex;margin:16px 0 8px}
-  .step{flex:1;text-align:center;position:relative}
-  .step .dot{width:14px;height:14px;border-radius:50%;background:#1F2D3A;border:2px solid #1F2D3A;margin:0 auto;position:relative;z-index:2;transition:all .4s}
-  .step .bar{position:absolute;top:6px;left:-50%;width:100%;height:3px;background:#1F2D3A;z-index:1;transition:background .4s}
-  .step:first-child .bar{display:none}
-  .step.done .dot{background:#00E676;border-color:#00E676}
-  .step.done .bar{background:#00E676}
-  .step.current .dot{background:#00E676;border-color:#00E676;box-shadow:0 0 0 5px rgba(0,230,118,.18);animation:pulse 1.6s infinite}
-  .step.current .bar{background:#00E676}
-  .step .label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#6B7280;margin-top:6px}
-  .step.done .label,.step.current .label{color:#00E676}
-  .prev-card{text-align:center;padding:14px}
-  .prev-card .big{font-size:26px;font-weight:800;font-family:ui-monospace,Consolas,monospace}
-  .prev-card .sub{font-size:12px;color:#8B98A5;margin-top:4px}
-  .fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:6px}
-  .fotos img{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:#fff}
-  .cash{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.3);border-radius:12px;padding:12px;margin-top:10px}
-  .cash .n{font-size:20px;font-weight:800;color:#00E676}
-  .state{text-align:center;padding:40px 12px;color:#8B98A5}
-  .state .big{font-size:44px;margin-bottom:10px}
-  #btnEntrega{display:none;width:100%;min-height:56px;border-radius:14px;border:none;background:linear-gradient(135deg,#00E676,#00B25A);color:#04140B;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:12px;font-family:inherit;box-shadow:0 8px 20px rgba(0,230,118,.25)}
-  #btnEntrega:active{transform:scale(.98)}
-  #avisoSemEntrega{display:none;text-align:center;border-color:rgba(255,255,255,.12)}
-  #avisoSemEntrega .ico{font-size:32px}
-  #avisoSemEntrega b{display:block;margin:6px 0 4px;font-size:14px}
-  #avisoSemEntrega p{font-size:12px;color:#8B98A5}
-  #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:16px}
-  #lightbox img{max-width:95vw;max-height:92vh;border-radius:12px}
-  #rl-card{background:#0F1720;border:1px solid rgba(0,230,118,.35);border-radius:16px;padding:16px;margin-bottom:12px}
-  #rl-titulo{font-size:14px;font-weight:800;color:#00E676;margin-bottom:10px}
-  #rl-banner{padding:12px;border-radius:12px;font-weight:800;font-size:13px;text-align:center;margin-bottom:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
-  /* 🆕 CARTÃO DO ENTREGADOR */
-  #rl-entregador{display:none;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(0,230,118,.08),rgba(59,130,246,.06));border:1px solid rgba(0,230,118,.3);margin-bottom:12px;gap:14px;align-items:center}
-  #rl-entregador.visible{display:flex}
-  #rl-entregador .foto{width:64px;height:64px;border-radius:50%;background:rgba(0,230,118,.15);border:3px solid rgba(0,230,118,.4);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;overflow:hidden}
-  #rl-entregador .foto img{width:100%;height:100%;object-fit:cover}
-  #rl-entregador .info{flex:1;min-width:0}
-  #rl-entregador .info .nome{font-size:16px;font-weight:800;color:#E6EDF3;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #rl-entregador .info .sub{font-size:12px;color:#9CA3AF;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-  #rl-entregador .info .sub span{display:inline-flex;align-items:center;gap:4px}
-  #rl-mapa{height:300px;border-radius:12px;overflow:hidden;position:relative;background:#0E1A24}
-  #rl-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,26,36,.9);color:#8B98A5;font-size:12px;z-index:5}
-  #rl-eta{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#8B98A5;font-size:12px;font-weight:700;text-align:center}
-  .foot{text-align:center;font-size:11px;color:#6B7280;margin-top:16px}
-  .foot b{color:#00E676}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div style="display:flex;align-items:center;gap:10px">
-    <svg viewBox="0 0 100 100"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E676"/><stop offset="100%" stop-color="#00B25A"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg)"/><path d="M20 62 L32 62 L40 44 L60 44 L68 62 L82 62" stroke="#070B0F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="33" cy="67" r="8" fill="#070B0F"/><circle cx="67" cy="67" r="8" fill="#070B0F"/><rect x="45" y="32" width="10" height="12" rx="3" fill="#070B0F"/><circle cx="50" cy="38" r="2" fill="#00E676"/></svg>
-    <b>OS-PREMIUM <span>• Acompanhamento</span></b>
-  </div>
-  <span class="live"><i></i> AO VIVO</span>
-</div>
-
-<div class="wrap">
-  <div id="os-section"><div class="card state"><div class="big">⏳</div>Carregando sua ordem de serviço...</div></div>
-
-  <button id="btnEntrega" onclick="abrirRastreio()">🛵 Rastrear minha entrega em tempo real</button>
-
-  <div id="avisoSemEntrega" class="card">
-    <div class="ico">🏪</div>
-    <b>Você não optou pela entrega domiciliar</b>
-    <p>Esta OS está configurada para retirada na loja.<br/>Se quiser receber em casa, fale com a loja.</p>
-  </div>
-
-  <div id="rl-box" style="display:none">
-    <div id="rl-card">
-      <div id="rl-titulo">🛵 Rastreamento da entrega ao vivo</div>
-      <div id="rl-banner">Carregando...</div>
-      
-      <!-- 🆕 CARTÃO DO ENTREGADOR -->
-      <div id="rl-entregador">
-        <div class="foto" id="rl-ent-foto">🛵</div>
-        <div class="info">
-          <div class="nome" id="rl-ent-nome">—</div>
-          <div class="sub">
-            <span id="rl-ent-veiculo">🚗 —</span>
-            <span id="rl-ent-placa">🔢 —</span>
-          </div>
-        </div>
+<!-- 🛵 CARD PROFISSIONAL: ENTREGA EM DOMICÍLIO -->
+<div id="card-entrega-domicilio" style="display:none; margin:20px 0; border-radius:16px; background:linear-gradient(145deg,#0F2420,#0A0F14); border:1px solid rgba(0,230,118,0.35); box-shadow:0 8px 32px rgba(0,230,118,0.15); overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  
+  <!-- Cabeçalho premium -->
+  <div style="padding:20px 24px; background:linear-gradient(135deg,rgba(0,230,118,0.12),rgba(0,200,83,0.05)); border-bottom:1px solid rgba(0,230,118,0.25); display:flex; align-items:center; gap:14px;">
+    <div style="width:52px; height:52px; border-radius:12px; background:linear-gradient(135deg,#00E676,#00C853); display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 0 20px rgba(0,230,118,0.4);">🛵</div>
+    <div style="flex:1;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+        <h3 style="margin:0; font-size:17px; font-weight:800; color:#E5E7EB; letter-spacing:-0.3px;">Entrega em Domicílio</h3>
+        <span style="padding:2px 8px; border-radius:999px; background:rgba(0,230,118,0.18); border:1px solid rgba(0,230,118,0.4); color:#00E676; font-size:9px; font-weight:900; letter-spacing:0.5px;">DISPONÍVEL</span>
       </div>
-      
-      <div id="rl-mapa"><div id="rl-load">🗺️ Preparando mapa...</div></div>
-      <div id="rl-eta">Aguardando o GPS do entregador...</div>
+      <p style="margin:0; font-size:12px; color:#9CA3AF;">Receba seu aparelho no conforto da sua casa com rastreamento em tempo real</p>
     </div>
   </div>
-
-  <div class="foot"><b>OS-PREMIUM</b> • Tecnologia que gera resultados<br/>Atualização automática</div>
+  
+  <!-- Corpo -->
+  <div style="padding:20px 24px;">
+    <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start; margin-bottom:18px;">
+      <div>
+        <p style="margin:0 0 8px; font-size:11px; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">💰 Taxa de entrega</p>
+        <p id="entrega-custo" style="margin:0; font-size:32px; font-weight:900; color:#00E676; letter-spacing:-1px;">R$ 10,00</p>
+        <p style="margin:4px 0 0; font-size:11px; color:#9CA3AF;">pagamento ao entregador no ato da entrega</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0 0 6px; font-size:11px; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">Status atual</p>
+        <span id="entrega-status" style="display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:999px; background:rgba(250,204,21,0.12); border:1px solid rgba(250,204,21,0.35); color:#FACC15; font-size:11px; font-weight:800;">
+          <span style="width:6px; height:6px; border-radius:50%; background:#FACC15; animation:pulse-dot 2s infinite;"></span>
+          Aguardando
+        </span>
+      </div>
+    </div>
+    
+    <!-- Benefícios -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; padding:14px; background:rgba(0,230,118,0.05); border:1px solid rgba(0,230,118,0.2); border-radius:10px;">
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#E5E7EB;">
+        <span style="color:#00E676;">✓</span><span>Rastreamento ao vivo</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#E5E7EB;">
+        <span style="color:#00E676;">✓</span><span>Entregador identificado</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#E5E7EB;">
+        <span style="color:#00E676;">✓</span><span>Confirmação por foto</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#E5E7EB;">
+        <span style="color:#00E676;">✓</span><span>Suporte direto WhatsApp</span>
+      </div>
+    </div>
+    
+    <!-- Entregador (aparece só quando já atribuído) -->
+    <div id="entrega-entregador" style="display:none; margin-bottom:18px; padding:14px; background:#0E1A24; border:1px solid #1F2D3A; border-radius:10px;">
+      <p style="margin:0 0 10px; font-size:10px; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">🛵 Seu entregador</p>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div id="entrega-entregador-foto" style="width:48px; height:48px; border-radius:50%; background:rgba(59,130,246,0.15); border:2px solid rgba(59,130,246,0.35); display:flex; align-items:center; justify-content:center; font-size:22px; overflow:hidden;">🛵</div>
+        <div style="flex:1;">
+          <p id="entrega-entregador-nome" style="margin:0; font-size:14px; font-weight:700; color:#E5E7EB;">—</p>
+          <p id="entrega-endereco" style="margin:3px 0 0; font-size:11px; color:#9CA3AF; line-height:1.4;">—</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Botão de solicitar -->
+    <a id="entrega-whatsapp-btn" href="#" target="_blank" rel="noopener" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px; border-radius:10px; background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(37,211,102,0.35); transition:transform 0.15s;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Solicitar entrega pelo WhatsApp
+    </a>
+    
+    <p style="margin:12px 0 0; font-size:10px; color:#6B7280; text-align:center; line-height:1.5;">
+      Ao solicitar, nossa equipe confirma endereço e horário. Você acompanha o caminho do entregador em tempo real.
+    </p>
+  </div>
 </div>
 
-<div id="lightbox" onclick="this.style.display='none'"><img id="lightbox-img" src="" alt="" /></div>
+<style>
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+</style>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const FB = 'https://os-premium-killswitch-default-rtdb.firebaseio.com';
-const token = new URLSearchParams(location.search).get('t');
-const osIdNum = token ? token.replace('os-','') : null;
-
-let osData = null, lastJson = '';
-let entregaToken = null, entregaEncontrada = false, rastreioAberto = false;
-let statusEntregaFinal = null;
-let map = null, mMoto = null, mDest = null, linha = null, coordsDest = null;
-let mapaCentralizado = false;
-let dadosEntregador = null; // 🆕 cache do entregador
-
-const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const moeda = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-
-const STATUS_COR = {
-  'Em Reparo':['#FACC15','rgba(250,204,21,.14)'],
-  'Aguardando Peça':['#3B82F6','rgba(59,130,246,.14)'],
-  'Aguardando Técnico':['#F59E0B','rgba(245,158,11,.14)'],
-  'Em Execução':['#3B82F6','rgba(59,130,246,.14)'],
-  'Laudo Criado':['#A855F7','rgba(168,85,247,.14)'],
-  'Pronto':['#00E676','rgba(0,230,118,.14)'],
-  'Pronto p/ Fechamento':['#00E676','rgba(0,230,118,.14)'],
-  'Finalizado':['#00E676','rgba(0,230,118,.14)'],
-  'Entregue':['#9CA3AF','rgba(156,163,175,.14)'],
-  'Cancelado':['#EF4444','rgba(239,68,68,.14)']
-};
-
-function calcularEtapa(status){
-  if(['Em Reparo','Aguardando Peça'].includes(status)) return 2;
-  if(['Aguardando Técnico','Em Execução','Laudo Criado'].includes(status)) return 3;
-  if(['Pronto','Pronto p/ Fechamento','Finalizado'].includes(status)) return 4;
-  if(status === 'Entregue') return 5;
-  return 1;
-}
-
-function checklistArr(c){
-  if(!c) return [];
-  if(Array.isArray(c)) return c;
-  if(typeof c === 'object') return Object.entries(c).map(([nome,resultado])=>({nome,resultado}));
-  return [];
-}
-
-function tickPrevisao(){
-  const el = document.getElementById('prev-big');
-  const card = document.getElementById('prev-card');
-  if(!el || !osData || !osData.entrega_programada) return;
-  const prog = new Date(osData.entrega_programada).getTime();
-  const ms = prog - Date.now();
-  let txt, c;
-  if(ms <= 0){
-    const abs = -ms;
-    const h = Math.floor(abs/3600000), m = Math.floor((abs%3600000)/60000), s = Math.floor((abs%60000)/1000);
-    txt = `ATRASADA há ${h>0?h+'h ':''}${m}min ${s}s`;
-    c = '#EF4444';
-  } else {
-    const dd = Math.floor(ms/86400000);
-    const h = Math.floor((ms%86400000)/3600000);
-    const m = Math.floor((ms%3600000)/60000);
-    const s = Math.floor((ms%60000)/1000);
-    if(dd > 0) txt = `${dd}d ${h}h ${m}min`;
-    else if(h > 0) txt = `${h}h ${m}min ${s}s`;
-    else txt = `${m}min ${s}s`;
-    const min = Math.round(ms/60000);
-    c = min <= 30 ? '#EF4444' : (min <= 120 ? '#FACC15' : '#00E676');
-  }
-  el.textContent = txt;
-  el.style.color = c;
-  if(card) card.style.borderColor = c+'55';
-  const lbl = document.getElementById('prev-lbl');
-  if(lbl) lbl.style.color = c;
-}
-
-function renderOS(){
-  const d = osData;
-  const sec = document.getElementById('os-section');
-  const statusEfetivo = statusEntregaFinal === 'entregue' ? 'Entregue' : d.status;
-  const cor = STATUS_COR[statusEfetivo] || ['#9CA3AF','rgba(156,163,175,.14)'];
-  let html = '';
-
-  if(d.expiraEm && new Date(d.expiraEm).getTime() < Date.now()){
-    sec.innerHTML = '<div class="card state"><div class="big">⌛</div><b>Link expirado</b><p style="margin-top:6px">Fale com a loja para receber um novo acompanhamento.</p></div>';
-    return;
-  }
-
-  const etapa = calcularEtapa(statusEfetivo);
-  const nomes = ['Recebida','Em reparo','Na técnica','Pronto','Entregue'];
-  let progressBar = '<div class="progress-bar">';
-  nomes.forEach((nome,i)=>{
-    const num = i+1;
-    const cls = num < etapa ? 'done' : (num === etapa ? 'current' : '');
-    progressBar += `<div class="step ${cls}"><div class="bar"></div><div class="dot"></div><div class="label">${nome}</div></div>`;
+// 🛵 Lê os dados de entrega do snapshot e preenche o card
+(function() {
+  const card = document.getElementById('card-entrega-domicilio');
+  if (!card) return;
+  
+  // Espera os dados do Firebase carregarem (o rastreio.html já faz isso)
+  const observer = new MutationObserver(() => {
+    const snapshot = window.__osSnapshot;
+    if (!snapshot) return;
+    const ed = snapshot.entrega_domicilio;
+    if (!ed) {
+      card.style.display = 'none';
+      return;
+    }
+    
+    card.style.display = 'block';
+    
+    // Custo
+    const custo = parseFloat(ed.custo) || 10;
+    document.getElementById('entrega-custo').textContent = 'R$ ' + custo.toFixed(2).replace('.', ',');
+    
+    // Status
+    const statusEl = document.getElementById('entrega-status');
+    const status = ed.status_entrega || 'pendente';
+    const statusConfig = {
+      pendente:  { label: 'Aguardando solicitação', color: '#FACC15', bg: 'rgba(250,204,21,0.12)', border: 'rgba(250,204,21,0.35)' },
+      aguardando: { label: 'Em fila de entrega', color: '#FACC15', bg: 'rgba(250,204,21,0.12)', border: 'rgba(250,204,21,0.35)' },
+      aceita:    { label: 'Entregador designado', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)' },
+      em_rota:   { label: 'Em rota para você', color: '#00E676', bg: 'rgba(0,230,118,0.15)', border: 'rgba(0,230,118,0.4)' },
+      entregue:  { label: 'Entregue', color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.35)' },
+      cancelada: { label: 'Cancelada', color: '#EF4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)' },
+    };
+    const cfg = statusConfig[status] || statusConfig.pendente;
+    statusEl.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:' + cfg.color + '; animation:pulse-dot 2s infinite;"></span>' + cfg.label;
+    statusEl.style.background = cfg.bg;
+    statusEl.style.borderColor = cfg.border;
+    statusEl.style.color = cfg.color;
+    
+    // Entregador (aparece só se já tem um)
+    const entregadorBox = document.getElementById('entrega-entregador');
+    if (ed.entregador) {
+      entregadorBox.style.display = 'block';
+      document.getElementById('entrega-entregador-nome').textContent = ed.entregador;
+      document.getElementById('entrega-endereco').textContent = ed.endereco_entrega || '—';
+      if (ed.entregador_foto) {
+        const fotoEl = document.getElementById('entrega-entregador-foto');
+        fotoEl.innerHTML = '<img src="' + ed.entregador_foto + '" style="width:100%; height:100%; object-fit:cover;">';
+      }
+    } else {
+      entregadorBox.style.display = 'none';
+    }
+    
+    // WhatsApp da loja (botão)
+    const btn = document.getElementById('entrega-whatsapp-btn');
+    const telLoja = (ed.whatsapp_loja || '').replace(/\D/g, '');
+    const numeroOS = ed.numero_os || '';
+    const cliente = ed.cliente_nome || '';
+    const equip = ed.equipamento || '';
+    const msg = 'Olá! Gostaria de solicitar entrega em domicílio para a OS #' + numeroOS + ' (' + equip + ').';
+    if (telLoja) {
+      btn.href = 'https://wa.me/55' + telLoja + '?text=' + encodeURIComponent(msg);
+      btn.style.display = 'flex';
+    } else {
+      btn.style.display = 'none';
+    }
   });
-  progressBar += '</div>';
-
-  html += `
-    <div class="card">
-      <span class="badge" style="color:${cor[0]};background:${cor[1]}">${esc(statusEfetivo)||'—'}</span>
-      <div class="osnum">OS #${esc(d.numero)}</div>
-      <div class="att">Atualizado em ${esc(d.atualizadoEm)||'—'} • sincroniza sozinho</div>
-      ${progressBar}
-    </div>`;
-
-  html += `
-    <div class="card">
-      <div class="lbl" style="margin-top:0">👤 Dados do cliente</div>
-      <div class="row"><span class="k">Nome</span><span class="v">${esc(d.cliente)||'—'}</span></div>
-      <div class="row"><span class="k">Telefone</span><span class="v">${esc(d.telefone)||'—'}</span></div>
-    </div>`;
-
-  html += `
-    <div class="card">
-      <div class="lbl" style="margin-top:0">💻 Dados do aparelho</div>
-      <div class="row"><span class="k">Equipamento</span><span class="v">${esc(d.equipamento)||'—'}</span></div>
-      <div class="row"><span class="k">Marca / Modelo</span><span class="v">${esc([d.marca,d.modelo].filter(Boolean).join(' '))||'—'}</span></div>
-      ${d.numeroSerie ? '<div class="row"><span class="k">Nº série / IMEI</span><span class="v">'+esc(d.numeroSerie)+'</span></div>' : ''}
-      <div class="row"><span class="k">Defeito relatado</span><span class="v" style="max-width:60%;text-align:right;font-weight:500">${esc(d.defeito)||'—'}</span></div>
-    </div>`;
-
-  if(d.entrega_programada){
-    html += `
-      <div class="card prev-card" id="prev-card">
-        <div class="lbl" id="prev-lbl" style="margin:0 0 6px">⏰ Previsão de entrega</div>
-        <div class="big" id="prev-big">—</div>
-        <div class="sub">${new Date(d.entrega_programada).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-      </div>`;
-  } else {
-    html += `
-      <div class="card prev-card">
-        <div class="lbl" style="margin:0 0 6px">⏰ Previsão de entrega</div>
-        <div class="big" style="color:#8B98A5">Não definida</div>
-        <div class="sub">A loja ainda não definiu uma data para esta OS.</div>
-      </div>`;
-  }
-
-  html += `
-    <div class="card">
-      <div class="lbl" style="margin-top:0">💰 Valores</div>
-      <div class="row"><span class="k">Entrada</span><span class="v">R$ ${moeda(d.valorEntrada)}</span></div>
-      <div class="row"><span class="k">Orçamento</span><span class="v">R$ ${moeda(d.valorOrcamento)}</span></div>
-      <div class="row"><span class="k">Restante</span><span class="v" style="color:${(parseFloat(d.valorRestante)||0)>0?'#EF4444':'#00E676'}">R$ ${moeda(d.valorRestante)}</span></div>
-      <div class="row"><span class="k">Pagamento</span><span class="v">${esc(d.formaPagamento)||'—'} • ${esc(d.statusPagamento)||'—'}</span></div>
-      ${d.cashback && d.cashback.ativo ? `
-        <div class="cash">
-          <div class="lbl" style="margin:0 0 4px;color:#00E676">💚 Cashback</div>
-          <div class="row"><span class="k">Seu saldo disponível</span><span class="n">R$ ${moeda(d.cashback.saldo)}</span></div>
-          <div class="row"><span class="k">Previsão nesta OS</span><span class="v" style="color:#00E676">+ R$ ${moeda(d.cashback.previsaoEstaOS)}</span></div>
-          <div class="att" style="margin-top:6px">Taxa ${d.cashback.taxa}% • validade ${d.cashback.validadeMeses} meses</div>
-        </div>` : ''}
-    </div>`;
-
-  if(Array.isArray(d.pecas) && d.pecas.length){
-    html += '<div class="card"><div class="lbl" style="margin-top:0">🔩 Peças/serviços utilizados</div>';
-    d.pecas.forEach(p => {
-      html += `<div class="row"><span class="k">${p.quantidade||1}x ${esc(p.nome)}</span><span class="v">R$ ${moeda((parseFloat(p.valorUnitario||p.valor||p.preco)||0)*(parseInt(p.quantidade)||1))}</span></div>`;
-    });
-    html += '</div>';
-  }
-
-  const cl = checklistArr(d.checklist);
-  if(cl.length){
-    html += '<div class="card"><div class="lbl" style="margin-top:0">✅ Checklist</div>';
-    cl.forEach(c => {
-      const ok = c.resultado === true || c.resultado === 'ok';
-      const falha = c.resultado === false || c.resultado === 'falha';
-      html += `<div class="row"><span class="k" style="text-transform:capitalize">${esc(c.nome)}</span><span class="v" style="color:${ok?'#00E676':falha?'#EF4444':'#6B7280'}">${ok?'✔ OK':falha?'✘ Falha':'—'}</span></div>`;
-    });
-    html += '</div>';
-  }
-
-  if(Array.isArray(d.fotos) && d.fotos.length){
-    html += '<div class="card"><div class="lbl" style="margin-top:0">📸 Fotos ('+d.fotos.length+')</div><div class="fotos">';
-    d.fotos.forEach((f,i) => { html += `<img src="${f}" onclick="abrirFoto(${i})" alt="Foto ${i+1}" />`; });
-    html += '</div></div>';
-  }
-
-  if(d.laudo){
-    html += `<div class="card"><div class="lbl" style="margin-top:0">📝 Laudo técnico</div><div class="val" style="font-weight:500;white-space:pre-wrap">${esc(d.laudo)}</div></div>`;
-  }
-  html += `<div class="card"><div class="row"><span class="k">🛡️ Garantia de serviço</span><span class="v">${parseInt(d.garantia)||90} dias</span></div></div>`;
-
-  sec.innerHTML = html;
-  tickPrevisao();
-  atualizarBotaoEntrega();
-}
-
-function atualizarBotaoEntrega(){
-  const btn = document.getElementById('btnEntrega');
-  const aviso = document.getElementById('avisoSemEntrega');
-  if(rastreioAberto){ btn.style.display='none'; aviso.style.display='none'; return; }
-  if(entregaEncontrada){
-    btn.style.display = 'block';
-    btn.textContent = statusEntregaFinal === 'entregue' ? '✅ Ver detalhes da entrega concluída' : '🛵 Rastrear minha entrega em tempo real';
-    aviso.style.display = 'none';
-  } else {
-    btn.style.display = 'none';
-    aviso.style.display = 'block';
-  }
-}
-
-async function descobrirEntrega(){
-  if(entregaEncontrada || !osIdNum) return;
-  try{
-    if(osData && osData.entregaToken){
-      entregaToken = osData.entregaToken;
-      entregaEncontrada = true;
-      atualizarBotaoEntrega();
-      return;
-    }
-    const r = await fetch(FB+'/entregas.json');
-    const d = await r.json();
-    if(!d) return;
-    const ativas = [];
-    const todas = [];
-    Object.entries(d).forEach(([k,v])=>{
-      if(String(v.osId) === String(osIdNum)){
-        todas.push({k,v});
-        if(!['entregue','cancelada','recusada'].includes(v.status)) ativas.push({k,v});
-      }
-    });
-    const escolhida = ativas.length ? ativas[ativas.length-1] : (todas.length ? todas[todas.length-1] : null);
-    if(escolhida){
-      entregaToken = escolhida.k;
-      entregaEncontrada = true;
-      if(['entregue','cancelada','recusada'].includes(escolhida.v.status)){
-        statusEntregaFinal = escolhida.v.status;
-        renderOS();
-      }
-      atualizarBotaoEntrega();
-    }
-  }catch(e){}
-}
-
-// 🆕 BUSCA DADOS DO ENTREGADOR (foto, veículo, placa)
-async function carregarDadosEntregador(entregadorId){
-  if(!entregadorId || dadosEntregador?.id === entregadorId) return;
-  try{
-    const r = await fetch(FB+'/entregadores/'+encodeURIComponent(entregadorId)+'.json');
-    const d = await r.json();
-    if(!d) return;
-    dadosEntregador = { id: entregadorId, ...d };
-    atualizarCartaoEntregador();
-  }catch(e){}
-}
-
-// 🆕 ATUALIZA O CARTÃO DO ENTREGADOR NA TELA
-function atualizarCartaoEntregador(){
-  if(!dadosEntregador) return;
-  const cartao = document.getElementById('rl-entregador');
-  const foto = document.getElementById('rl-ent-foto');
-  const nome = document.getElementById('rl-ent-nome');
-  const veiculo = document.getElementById('rl-ent-veiculo');
-  const placa = document.getElementById('rl-ent-placa');
   
-  cartao.classList.add('visible');
-  nome.textContent = dadosEntregador.nome || '—';
+  observer.observe(document.body, { childList: true, subtree: true });
   
-  if(dadosEntregador.foto){
-    foto.innerHTML = `<img src="${dadosEntregador.foto}" alt="${esc(dadosEntregador.nome)}" />`;
-  } else {
-    foto.innerHTML = '🛵';
-  }
-  
-  veiculo.innerHTML = '🚗 ' + (dadosEntregador.veiculo || '—');
-  placa.innerHTML = '🔢 ' + (dadosEntregador.placa || '—');
-}
-
-window.abrirRastreio = () => {
-  rastreioAberto = true;
-  mapaCentralizado = false;
-  document.getElementById('rl-box').style.display = 'block';
-  document.getElementById('btnEntrega').style.display = 'none';
-  document.getElementById('avisoSemEntrega').style.display = 'none';
-  if(!map){
-    loopEntrega();
-    setInterval(loopEntrega, 5000);
-  } else {
-    loopEntrega();
-  }
-  document.getElementById('rl-box').scrollIntoView({behavior:'smooth'});
-};
-
-window.abrirFoto = (i) => {
-  const f = osData.fotos[i];
-  if(!f) return;
-  document.getElementById('lightbox-img').src = f;
-  document.getElementById('lightbox').style.display = 'flex';
-};
-
-async function carregarOS(){
-  if(!token){
-    document.getElementById('os-section').innerHTML = '<div class="card state"><div class="big">🔗</div><b>Link inválido</b></div>';
-    return;
-  }
-  try{
-    const r = await fetch(FB+'/os_public/'+encodeURIComponent(token)+'.json');
-    const d = await r.json();
-    if(!d){
-      document.getElementById('os-section').innerHTML = '<div class="card state"><div class="big">📭</div><b>OS não encontrada</b><p style="margin-top:6px">Verifique o link com a loja.</p></div>';
-      return;
-    }
-    const json = JSON.stringify(d);
-    if(json !== lastJson){
-      lastJson = json;
-      osData = d;
-      renderOS();
-    }
-    await descobrirEntrega();
-  }catch(e){}
-}
-
-const BANNER = {
-  aguardando: ['#FACC15','rgba(250,204,21,.12)','⏳ Aguardando o entregador retirar o pedido'],
-  aceita:     ['#3B82F6','rgba(59,130,246,.12)','📦 Pedido com o entregador — saindo para entrega'],
-  em_rota:    ['#00E676','rgba(0,230,118,.12)','🛵 A caminho! Acompanhe no mapa abaixo'],
-  entregue:   ['#00E676','rgba(0,230,118,.12)','✅ Entrega concluída! Obrigado pela preferência'],
-  cancelada:  ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja'],
-  recusada:   ['#EF4444','rgba(239,68,68,.12)','❌ Entrega cancelada — fale com a loja']
-};
-
-function setBanner(st){
-  const b = BANNER[st] || BANNER.aguardando;
-  const el = document.getElementById('rl-banner');
-  el.style.color = b[0]; el.style.background = b[1]; el.style.borderColor = b[0];
-  el.textContent = b[2];
-}
-
-function distKm(a,b,c,d){
-  const R=6371, tr=x=>x*Math.PI/180;
-  const dLa=tr(c-a), dLo=tr(d-b);
-  const h=Math.sin(dLa/2)**2 + Math.cos(tr(a))*Math.cos(tr(c))*Math.sin(dLo/2)**2;
-  return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
-}
-
-function initMapa(){
-  if(map) return;
-  map = L.map('rl-mapa',{zoomControl:true,attributionControl:false}).setView([-15.78,-47.93],4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
-  setTimeout(()=>map.invalidateSize(),400);
-}
-
-function ajustarVisaoMapa(){
-  if(!map || mapaCentralizado) return;
-  mapaCentralizado = true;
-  
-  setTimeout(()=>{
-    if(mMoto && mDest){
-      const grupo = L.featureGroup([mMoto, mDest]);
-      map.fitBounds(grupo.getBounds(), {padding:[50,50], maxZoom:15});
-    } else if(mMoto){
-      const ll = mMoto.getLatLng();
-      map.setView(ll, 15);
-    } else if(mDest){
-      const ll = mDest.getLatLng();
-      map.setView(ll, 15);
-    }
-  }, 300);
-}
-
-function geocode(end, cb){
-  fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(end)+'&limit=1&countrycodes=br',{headers:{'User-Agent':'OS-Premium-Rastreio/1.0'}})
-    .then(r=>r.json())
-    .then(d=>cb(d && d.length ? {lat:parseFloat(d[0].lat), lng:parseFloat(d[0].lon)} : null))
-    .catch(()=>cb(null));
-}
-
-function loopEntrega(){
-  if(!entregaToken) return;
-  fetch(FB+'/entregas/'+encodeURIComponent(entregaToken)+'.json')
-    .then(r=>r.json())
-    .then(ent=>{
-      if(!ent) return;
-      setBanner(ent.status);
-
-      // 🆕 Carrega dados do entregador para o cartão
-      if(ent.entregadorId){
-        carregarDadosEntregador(ent.entregadorId);
-      }
-
-      if(['entregue','cancelada','recusada'].includes(ent.status)){
-        if(statusEntregaFinal !== ent.status){
-          statusEntregaFinal = ent.status;
-          renderOS();
-        }
-        document.getElementById('rl-mapa').style.display = 'none';
-        document.getElementById('rl-entregador').classList.remove('visible');
-        if(mMoto && map){ map.removeLayer(mMoto); mMoto=null; }
-        if(linha && map){ map.removeLayer(linha); linha=null; }
-        const eta = document.getElementById('rl-eta');
-        if(ent.status === 'entregue'){
-          eta.style.background='rgba(0,230,118,.08)';
-          eta.style.borderColor='rgba(0,230,118,.3)';
-          eta.style.color='#00E676';
-          eta.innerHTML = '✅ <b>Pedido entregue com sucesso!</b><br/>Obrigado pela preferência.';
-        } else {
-          eta.style.background='rgba(239,68,68,.08)';
-          eta.style.borderColor='rgba(239,68,68,.3)';
-          eta.style.color='#EF4444';
-          eta.textContent = 'Entrega encerrada. Fale com a loja para mais informações.';
-        }
-        return;
-      }
-
-      document.getElementById('rl-mapa').style.display = 'block';
-
-      if(ent.endereco && !coordsDest){
-        geocode(ent.endereco, c=>{
-          if(!c){ document.getElementById('rl-load').innerHTML='📍 Mapa indisponível para este endereço'; return; }
-          coordsDest = c;
-          initMapa();
-          mDest = L.marker([c.lat,c.lng],{icon:L.divIcon({html:'<div style="font-size:30px">📍</div>',className:'',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);
-          document.getElementById('rl-load').style.display='none';
-          ajustarVisaoMapa();
-        });
-      }
-
-      fetch(FB+'/posicoes/'+encodeURIComponent(entregaToken)+'.json')
-        .then(r=>r.json())
-        .then(pos=>{
-          const eta = document.getElementById('rl-eta');
-          if(pos && pos.lat && pos.lng){
-            initMapa();
-            if(!mMoto){
-              mMoto = L.marker([pos.lat,pos.lng],{icon:L.divIcon({html:'<div style="font-size:28px">🛵</div>',className:'',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map);
-              ajustarVisaoMapa();
-            } else {
-              mMoto.setLatLng([pos.lat,pos.lng]);
-            }
-            if(coordsDest){
-              if(linha) map.removeLayer(linha);
-              linha = L.polyline([[pos.lat,pos.lng],[coordsDest.lat,coordsDest.lng]],{color:'#00E676',weight:4,dashArray:'8 8',opacity:.8}).addTo(map);
-              const d = distKm(pos.lat,pos.lng,coordsDest.lat,coordsDest.lng);
-              eta.style.background='rgba(0,230,118,.08)'; eta.style.borderColor='rgba(0,230,118,.3)'; eta.style.color='#00E676';
-              eta.innerHTML = '🛵 O entregador está a <b>'+d.toFixed(1)+' km</b> de você • chegada em ~<b>'+Math.max(1,Math.round(d/30*60))+' min</b>';
-            }
-            document.getElementById('rl-load').style.display='none';
-          } else {
-            eta.textContent = '⏳ Aguardando o GPS do entregador ligar...';
+  // Também roda uma vez após 1s (caso os dados já tenham carregado)
+  setTimeout(() => {
+    const snapshot = window.__osSnapshot;
+    if (snapshot) {
+      observer.disconnect();
+      // dispara uma mutação fake
+      document.body.dispatchEvent(new Event('dom-loaded'));
+      // executa diretamente
+      const ed = snapshot.entrega_domicilio;
+      if (ed) {
+        card.style.display = 'block';
+        const custo = parseFloat(ed.custo) || 10;
+        document.getElementById('entrega-custo').textContent = 'R$ ' + custo.toFixed(2).replace('.', ',');
+        const statusEl = document.getElementById('entrega-status');
+        const status = ed.status_entrega || 'pendente';
+        const statusConfig = {
+          pendente:  { label: 'Aguardando solicitação', color: '#FACC15', bg: 'rgba(250,204,21,0.12)', border: 'rgba(250,204,21,0.35)' },
+          aguardando: { label: 'Em fila de entrega', color: '#FACC15', bg: 'rgba(250,204,21,0.12)', border: 'rgba(250,204,21,0.35)' },
+          aceita:    { label: 'Entregador designado', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)' },
+          em_rota:   { label: 'Em rota para você', color: '#00E676', bg: 'rgba(0,230,118,0.15)', border: 'rgba(0,230,118,0.4)' },
+          entregue:  { label: 'Entregue', color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.35)' },
+          cancelada: { label: 'Cancelada', color: '#EF4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)' },
+        };
+        const cfg = statusConfig[status] || statusConfig.pendente;
+        statusEl.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:' + cfg.color + '; animation:pulse-dot 2s infinite;"></span>' + cfg.label;
+        statusEl.style.background = cfg.bg;
+        statusEl.style.borderColor = cfg.border;
+        statusEl.style.color = cfg.color;
+        
+        const entregadorBox = document.getElementById('entrega-entregador');
+        if (ed.entregador) {
+          entregadorBox.style.display = 'block';
+          document.getElementById('entrega-entregador-nome').textContent = ed.entregador;
+          document.getElementById('entrega-endereco').textContent = ed.endereco_entrega || '—';
+          if (ed.entregador_foto) {
+            const fotoEl = document.getElementById('entrega-entregador-foto');
+            fotoEl.innerHTML = '<img src="' + ed.entregador_foto + '" style="width:100%; height:100%; object-fit:cover;">';
           }
-        });
-    })
-    .catch(()=>{});
-}
-
-carregarOS();
-setInterval(carregarOS, 10000);
-setInterval(tickPrevisao, 1000);
-setInterval(descobrirEntrega, 15000);
+        }
+        
+        const btn = document.getElementById('entrega-whatsapp-btn');
+        const telLoja = (ed.whatsapp_loja || '').replace(/\D/g, '');
+        const numeroOS = ed.numero_os || '';
+        const equip = ed.equipamento || '';
+        const msg = 'Olá! Gostaria de solicitar entrega em domicílio para a OS #' + numeroOS + ' (' + equip + ').';
+        if (telLoja) {
+          btn.href = 'https://wa.me/55' + telLoja + '?text=' + encodeURIComponent(msg);
+          btn.style.display = 'flex';
+        }
+      }
+    }
+  }, 1500);
+})();
 </script>
-</body>
-</html>
