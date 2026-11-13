@@ -12,6 +12,7 @@
 :root{
 --pri:#00E676;--pri2:#00C853;--sec:#3B82F6;--sec2:#2563EB;--ter:#A855F7;--cyan:#06B6D4;
 --warn:#FACC15;--gold:#F59E0B;--err:#EF4444;--pink:#EC4899;--lime:#84CC16;--orange:#F97316;
+--zap:#25D366;--zap2:#128C7E;
 --bg:#06090C;--s2:#111E28;--s3:#0E1A24;--s4:#16232E;--on:#E5E7EB;--mute:#9CA3AF;--dim:#6B7280;--line:#1F2D3A;
 --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
 --r:16px;--rl:26px;--e1:0 2px 8px rgba(0,0,0,.4);--e2:0 10px 32px rgba(0,0,0,.5);
@@ -46,6 +47,7 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 .btn.pri{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#04140C;box-shadow:0 4px 18px rgba(0,230,118,.32)}
 .btn.blue{background:linear-gradient(135deg,var(--sec),var(--sec2));color:#fff}
 .btn.red{background:linear-gradient(135deg,var(--err),#DC2626);color:#fff}
+.btn.zap{background:linear-gradient(135deg,var(--zap),var(--zap2));color:#fff;box-shadow:0 4px 18px rgba(37,211,102,.35)}
 .btn.tonal{background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.38);color:var(--pri)}
 .btn.ghost{border:1px solid var(--line);color:var(--mute)}
 .btn[disabled]{opacity:.42;pointer-events:none}
@@ -103,6 +105,8 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 .acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px}
 .ab{padding:9px 6px;border-radius:10px;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid;transition:.15s;min-height:40px}
 .ab:hover{filter:brightness(1.2)}
+.ab.zap{grid-column:1/-1;min-height:46px;font-size:12.5px;background:linear-gradient(135deg,var(--zap),var(--zap2));color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(37,211,102,.28)}
+.ab.zap:hover{box-shadow:0 6px 22px rgba(37,211,102,.45);filter:brightness(1.05)}
 .empty{text-align:center;padding:60px 22px}
 .empty .ic{font-size:46px;opacity:.28;margin-bottom:14px}
 .empty b{font-size:16px;display:block}
@@ -149,6 +153,14 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.25);transform:scale(0);animation:rp .55s ease-out;pointer-events:none}
 @keyframes rp{to{transform:scale(3.2);opacity:0}}
 pre{margin:0}code{font-family:ui-monospace,monospace}
+.zap-preview{background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.3);border-radius:14px;padding:14px;margin-bottom:16px;position:relative}
+.zap-preview::before{content:'';position:absolute;top:-7px;left:20px;width:14px;height:14px;background:rgba(37,211,102,.06);border-left:1px solid rgba(37,211,102,.3);border-top:1px solid rgba(37,211,102,.3);transform:rotate(45deg)}
+.zap-preview .msg{font-size:13px;line-height:1.6;color:var(--on);white-space:pre-wrap;word-break:break-word}
+.zap-preview .meta{font-size:10px;color:var(--dim);margin-top:8px;text-align:right}
+.tpl-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tpl-chip{padding:6px 11px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid var(--line);background:var(--s3);color:var(--mute);transition:.15s}
+.tpl-chip:hover{border-color:var(--pri);color:var(--pri)}
+.tpl-chip.on{background:rgba(0,230,118,.14);border-color:var(--pri);color:var(--pri)}
 </style>
 </head>
 <body>
@@ -202,6 +214,52 @@ const LSK={hist:'os_lic_hist',log:'os_lic_log',admin:'os_lic_admhash',cfg:'os_li
 const CFG={autoRefresh:true,refreshMs:30000,onlineMin:3,ausenteMin:15,alertaDias:7};
 const ADMIN_DEFAULT=atob(['MDgy','NjEy'].join(''));
 const ESTADOS={ativa:{lb:'Ativa',cor:'#00E676',ic:'✅'},vencendo:{lb:'Vencendo',cor:'#FACC15',ic:'⚠️'},vencida:{lb:'Vencida',cor:'#F97316',ic:'⏰'},bloqueada:{lb:'Bloqueada',cor:'#EF4444',ic:'🚫'},pendente:{lb:'Pendente',cor:'#3B82F6',ic:'⏳'},reprovada:{lb:'Reprovada',cor:'#EC4899',ic:'❌'},semdata:{lb:'Sem validade',cor:'#6B7280',ic:'❓'}};
+
+/* ═══════════ 📱 MENSAGENS WHATSAPP POR STATUS ═══════════ */
+const MSGS_ZAP = {
+  ativa: {
+    titulo: '💚 Cliente ativo',
+    cor: '#00E676',
+    msg: (l) => `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nAqui é da equipe OS-PREMIUM. Passando para agradecer pela confiança — sua licença está ativa e funcionando normalmente até *${fData(l.validade)}*.\n\nSe precisar de qualquer coisa, é só chamar. Estamos à disposição! 🚀`
+  },
+  vencendo: {
+    titulo: '⚠️ Lembrete de renovação',
+    cor: '#FACC15',
+    msg: (l) => {
+      const d = diasRest(l);
+      return `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nPassando para te lembrar que sua licença OS-PREMIUM vence em *${d} dia(s)* (${fData(l.validade)}).\n\nQue tal renovarmos agora para você não perder o acesso e continuar usando todos os recursos sem interrupção?\n\nPosso te ajudar com a renovação! ✅`;
+    }
+  },
+  vencida: {
+    titulo: '⏰ Licença vencida',
+    cor: '#F97316',
+    msg: (l) => {
+      const d = diasRest(l);
+      const atraso = d !== null && d < 0 ? Math.abs(d) : 0;
+      return `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nNotamos que sua licença OS-PREMIUM venceu há *${atraso} dia(s)* (era até ${fData(l.validade)}).\n\nSem a licença ativa, o sistema fica bloqueado. Vamos regularizar agora para você voltar a usar tudo normalmente?\n\nEstou aqui para te ajudar! 💚`;
+    }
+  },
+  bloqueada: {
+    titulo: '🚫 Acesso bloqueado',
+    cor: '#EF4444',
+    msg: (l) => `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nInformamos que sua licença OS-PREMIUM está *bloqueada* no momento.\n\nPara regularizar e voltar a usar o sistema, entre em contato conosco. Estamos prontos para te ajudar a resolver isso o mais rápido possível.\n\nAguardamos seu retorno! 📞`
+  },
+  pendente: {
+    titulo: '⏳ Aguardando aprovação',
+    cor: '#3B82F6',
+    msg: (l) => `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nRecebemos sua solicitação de licença OS-PREMIUM e ela está em análise.\n\nEm breve entraremos em contato para finalizar o processo. Obrigado pela paciência! ⏳\n\nQualquer dúvida, pode chamar.`
+  },
+  reprovada: {
+    titulo: '❌ Solicitação reprovada',
+    cor: '#EC4899',
+    msg: (l) => `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nPrecisamos de algumas informações adicionais sobre sua solicitação de licença OS-PREMIUM.\n\nPodemos conversar para esclarecer e dar sequência ao processo? 📋\n\nFicamos no aguardo!`
+  },
+  semdata: {
+    titulo: '❓ Sem validade definida',
+    cor: '#6B7280',
+    msg: (l) => `Olá, ${l.nome_cliente || 'tudo bem'}! 👋\n\nSua licença OS-PREMIUM está sem validade definida no sistema. Podemos conversar para regularizar essa situação?\n\nEstou à disposição! 💬`
+  }
+};
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -320,7 +378,7 @@ function grupos(){const g={todas:licencas,ativa:[],vencendo:[],vencida:[],bloque
 licencas.forEach(l=>{(g[estado(l)]||g.semdata).push(l);if(statusOnline(l).k==='on')g.online.push(l)});return g}
 function preencherRev(){if(usuario.tipo!=='admin'){$('#iRev').style.display='none';return}
 const s=$('#iRev'),v=s.value;
-s.innerHTML='<option value="todos">Todos os revendedores</option><option value="DIRETO">👤 Clientes diretos</option>'+revendedores.map(r=>`<option value="${esc(r.codigo)}">🏪 ${esc(r.nome)}</option>`).join('');
+s.innerHTML='<option value="todos">Todos os revendedores</option><option value="DIRETO">👤 Clientes diretos</option>'+revendedores.map(r=>`<option value="${esc(r.codigo)}">🏪 ${esc(r.nome)} (${esc(r.codigo)})</option>`).join('');
 s.value=v||'todos'}
 function filtrar(lista){let l=[...lista];const q=busca.trim().toLowerCase();
 if(q)l=l.filter(x=>[x.nome_cliente,x.nome_empresa,x.email,x.cnpj,x.hwid,x.telefone,x.cidade,x.codigo_revendedor,x.nome_revendedor].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -354,6 +412,7 @@ const e=estado(l),E=ESTADOS[e],on=statusOnline(l),t=fimValidade(l);
 const ren=historico(l.id).filter(x=>x.tipo==='renovacao').length;
 const cor=avc(l.nome_cliente),rev=l.codigo_revendedor&&l.codigo_revendedor!=='DIRETO',ts=tsPresenca(l);
 const cd=t?`<div class="cd" style="background:${rgba(E.cor,.09)};border:1px solid ${rgba(E.cor,.28)}"><div><div class="cdl" style="color:${E.cor}">${e==='vencida'?'Vencida há':'Tempo restante'}</div><div class="cdv" data-cd="${t}">—</div></div><div class="cdd" style="color:${E.cor}">até<br><strong>${fData(l.validade)}</strong></div></div>`:'';
+const temZap=dig(l.telefone).length>=10;
 return`<div class="card"><div class="bar" style="background:${E.cor};box-shadow:0 0 12px ${E.cor}"></div>
 <div class="chead"><div class="cav" style="background:linear-gradient(135deg,${rgba(cor,.28)},${rgba(cor,.1)});border:1px solid ${rgba(cor,.45)};color:${cor}">${esc(ini(l.nome_cliente))}</div>
 <div class="cinfo"><h3>${esc(l.nome_cliente||'Sem nome')}</h3><div class="emp">${esc(l.nome_empresa||'—')}</div></div>
@@ -370,7 +429,10 @@ ${l.telefone?`<div><span>📱 Telefone</span><span>${esc(fone(l.telefone))}</spa
 ${l.cidade?`<div><span>📍 Cidade</span><span>${esc(l.cidade)}</span></div>`:''}
 ${usuario.tipo==='admin'&&l.hwid?`<div><span>🔑 HWID</span><span class="mono">${esc(String(l.hwid).slice(0,18))}${String(l.hwid).length>18?'…':''}</span></div>`:''}
 <div><span>📡 Último sinal</span><span ${ts?`data-ago="${ts}"`:''} style="color:${on.cor}">${tempoAtras(ts)}</span></div></div>
-<div class="acts">${botoes(l,e)}</div></div>`}
+<div class="acts">
+${temZap?`<button class="ab zap" data-zap="${l.id}">💬 Chamar no WhatsApp</button>`:''}
+${botoes(l,e)}
+</div></div>`}
 
 function botoes(l,e){
 const B=(a,lb,c,i)=>`<button class="ab" data-act="${a}" data-id="${l.id}" style="border-color:${rgba(c,.4)};background:${rgba(c,.1)};color:${c}">${i} ${lb}</button>`;
@@ -387,6 +449,7 @@ function bind(){
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{aba=b.dataset.tab;render()});
 document.querySelectorAll('[data-kpi]').forEach(b=>b.onclick=()=>{aba=b.dataset.kpi;render();window.scrollTo({top:260,behavior:'smooth'})});
 document.querySelectorAll('[data-det]').forEach(b=>b.onclick=()=>detalhes(b.dataset.det));
+document.querySelectorAll('[data-zap]').forEach(b=>b.onclick=()=>whatsappStatus(b.dataset.zap));
 document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,a=b.dataset.act;
 if(a==='renovar')sheetRenovar(id);else if(a==='toggle')toggle(id);else if(a==='excluir')excluir(id);
 else if(a==='editar')sheetEditar(id);else if(a==='aprovar')aprovar(id);else if(a==='rejeitar')rejeitar(id);
@@ -396,6 +459,74 @@ if(a==='edit')sheetEditarRev(id);else if(a==='toggle')toggleRev(id);else if(a===
 else if(a==='ver'){filtroRev=revendedores.find(r=>String(r.id)===String(id))?.codigo||'todos';$('#iRev').value=filtroRev;aba='todas';render()}});
 const nr=$('#bNovoRev');if(nr)nr.onclick=novoRev;
 const cl=$('#bLimLog');if(cl)cl.onclick=()=>confirmar('🗑 Limpar auditoria','Histórico de ações','Todo o registro será apagado deste navegador.','red',async()=>{ls.del(LSK.log);render();toast('Histórico limpo','warn')})}
+
+/* ═══════════ 📱 WHATSAPP COM MENSAGEM POR STATUS ═══════════ */
+function whatsappStatus(id){
+const l=licencas.find(x=>String(x.id)===String(id));
+if(!l){toast('Licença não encontrada','err');return}
+const tel=dig(l.telefone);
+if(tel.length<10){toast('Telefone inválido ou não cadastrado','err');return}
+const e=estado(l),tpl=MSGS_ZAP[e]||MSGS_ZAP.semdata;
+let msgAtual=tpl.msg(l);
+
+sheet((b,close)=>{
+const renderPreview=()=>{
+const prev=b.querySelector('.zap-preview .msg');
+if(prev)prev.textContent=msgAtual;
+};
+
+b.insertAdjacentHTML('beforeend',`
+<h3 style="color:${tpl.cor}">💬 WhatsApp · ${tpl.titulo}</h3>
+<p class="desc">
+<strong style="color:var(--on)">${esc(l.nome_cliente)}</strong> · ${esc(l.nome_empresa||'—')}<br>
+Telefone: <strong style="color:var(--zap)">${esc(fone(tel))}</strong> · Status: <strong style="color:${tpl.cor}">${ESTADOS[e].lb}</strong>
+</p>
+
+<div class="sect" style="color:var(--pri)"><i style="background:var(--pri)"></i>Modelo de mensagem</div>
+<div class="tpl-chips">
+${Object.entries(MSGS_ZAP).map(([k,v])=>`<button class="tpl-chip${k===e?' on':''}" data-tpl="${k}" style="${k===e?`border-color:${v.cor};color:${v.cor};background:${rgba(v.cor,.14)}`:''}">${v.titulo.split(' ')[0]} ${ESTADOS[k].lb}</button>`).join('')}
+</div>
+
+<div class="zap-preview">
+<div class="msg">${esc(msgAtual)}</div>
+<div class="meta">Mensagem pré-visualização</div>
+</div>
+
+<div class="fld"><label>Editar mensagem (opcional)</label>
+<textarea class="inp" id="zMsg" rows="7" style="min-height:160px;resize:vertical;line-height:1.55">${esc(msgAtual)}</textarea>
+<div class="hint">💡 Use <code>{nome}</code>, <code>{empresa}</code>, <code>{validade}</code>, <code>{dias}</code> para variáveis automáticas.</div></div>
+
+<div class="row">
+<button class="btn ghost" id="zNo">Cancelar</button>
+<a class="btn zap full" id="zOk" target="_blank" href="#">💬 Abrir WhatsApp</a>
+</div>`);
+
+const atualizarLink=()=>{
+const texto=b.querySelector('#zMsg').value.trim();
+if(!texto){b.querySelector('#zOk').setAttribute('href','#');b.querySelector('#zOk').classList.add('disabled');return}
+const url=`https://wa.me/55${tel}?text=${encodeURIComponent(texto)}`;
+b.querySelector('#zOk').setAttribute('href',url);
+b.querySelector('#zOk').classList.remove('disabled');
+};
+
+b.querySelector('#zMsg').oninput=e=>{msgAtual=e.target.value;renderPreview();atualizarLink()};
+b.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>{
+const k=x.dataset.tpl,novo=MSGS_ZAP[k];
+msgAtual=novo.msg(l);
+b.querySelector('#zMsg').value=msgAtual;
+renderPreview();atualizarLink();
+b.querySelectorAll('[data-tpl]').forEach(y=>{y.classList.remove('on');y.style=''});
+x.classList.add('on');x.style=`border-color:${novo.cor};color:${novo.cor};background:${rgba(novo.cor,.14)}`;
+});
+
+b.querySelector('#zNo').onclick=close;
+b.querySelector('#zOk').onclick=()=>{
+logar('WhatsApp',l.nome_cliente,ESTADOS[e].lb);
+setTimeout(close,200);
+};
+
+atualizarLink();
+})}
 
 function confirmar(titulo,alvo,texto,cor,fn,digitar){
 sheet((b,close)=>{b.insertAdjacentHTML('beforeend',`<h3 style="color:var(--${cor==='red'?'err':'pri'})">${esc(titulo)}</h3>
@@ -478,14 +609,17 @@ const l=licencas.find(x=>String(x.id)===String(id));if(!l)return;
 sheet((b,close)=>{const t=dig(l.telefone);
 b.insertAdjacentHTML('beforeend',`<h3>📱 Contato</h3><p class="desc">${esc(l.nome_cliente)}</p>
 ${t?`<a class="btn tonal full" href="tel:${t}" style="margin-bottom:9px">📞 Ligar ${esc(fone(t))}</a>
-<a class="btn pri full" target="_blank" style="margin-bottom:9px" href="https://wa.me/55${t}?text=${encodeURIComponent(`Olá ${l.nome_cliente}! Sobre sua licença OS-PREMIUM com validade em ${fData(l.validade)}.`)}">💬 WhatsApp</a>`:''}
+<button class="btn zap full" style="margin-bottom:9px" data-zapid="${l.id}">💬 WhatsApp com mensagem personalizada</button>`:''}
 ${l.email?`<a class="btn blue full" style="margin-bottom:9px" href="mailto:${esc(l.email)}?subject=${encodeURIComponent('Licença OS-PREMIUM')}">📧 E-mail</a>`:''}
 <button class="btn ghost full" id="ctNo">Fechar</button>`);
-b.querySelector('#ctNo').onclick=close})}
+b.querySelector('#ctNo').onclick=close;
+const zb=b.querySelector('[data-zapid]');
+if(zb)zb.onclick=()=>{close();whatsappStatus(l.id)}})}
 
 function detalhes(id){
 const l=licencas.find(x=>String(x.id)===String(id));if(!l)return;
 const e=estado(l),E=ESTADOS[e],on=statusOnline(l),t=fimValidade(l),h=historico(id);
+const temZap=dig(l.telefone).length>=10;
 sheet((b,close)=>{const L=(k,v,c)=>`<div class="li"><span class="k">${esc(k)}</span><span class="v"${c?` style="color:${c}"`:''}>${esc(v||'—')}</span></div>`;
 b.insertAdjacentHTML('beforeend',`<h3>${esc(l.nome_cliente||'Sem nome')}</h3><p class="desc">${esc(l.nome_empresa||'—')}</p>
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
@@ -504,11 +638,12 @@ ${L('Situação',on.lb,on.cor)}${L('Último sinal',tempoAtras(tsPresenca(l)))}
 ${h.length?`<div class="sect" style="color:var(--gold)"><i style="background:var(--gold)"></i>Histórico (${h.length})</div>
 <div style="max-height:200px;overflow-y:auto">${h.map(x=>`<div class="li"><span class="k">${esc(x.tipo)}<br><span style="font-weight:600;opacity:.7">${fDT(x.quando)}</span></span><span class="v">${esc(x.de||'—')} → <strong style="color:var(--pri)">${esc(x.para||'—')}</strong><br><span style="font-size:10px;color:var(--dim)">por ${esc(x.quem)}</span></span></div>`).join('')}</div>`:''}
 <div style="height:18px"></div>
-<div class="row">${usuario.tipo==='admin'?`<button class="btn blue" id="dEd">✏️ Editar</button>`:''}<button class="btn pri" id="dRe">🔄 Renovar</button></div>
+<div class="row">${temZap?`<button class="btn zap" id="dZap">💬 WhatsApp</button>`:''}${usuario.tipo==='admin'?`<button class="btn blue" id="dEd">✏️ Editar</button>`:''}<button class="btn pri" id="dRe">🔄 Renovar</button></div>
 <div style="height:9px"></div><button class="btn ghost full" id="dNo">Fechar</button>`);
 b.querySelector('#dNo').onclick=close;
 b.querySelector('#dRe').onclick=()=>{close();sheetRenovar(id)};
-b.querySelector('#dEd')?.addEventListener('click',()=>{close();sheetEditar(id)});tick()})}
+b.querySelector('#dEd')?.addEventListener('click',()=>{close();sheetEditar(id)});
+b.querySelector('#dZap')?.addEventListener('click',()=>{close();whatsappStatus(id)});tick()})}
 
 function sheetEditar(id){
 const l=licencas.find(x=>String(x.id)===String(id));if(!l)return;
